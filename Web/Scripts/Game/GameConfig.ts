@@ -34,9 +34,9 @@
 
 var Colors = {
 
-    Background: new Color(48, 198, 230), // #30c6e6 
+    Background: Color.fromHex("#30c6e6"), 
     Player: new Color(255, 0, 0), // red
     Enemy: new Color(0, 0, 255), // blue
-    Land: new Color(234, 233, 163) // #eae9a3
+    Land: Color.fromHex("#eae9a3")
 
 };

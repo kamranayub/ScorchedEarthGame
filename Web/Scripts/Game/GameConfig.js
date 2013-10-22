@@ -22,8 +22,8 @@
 };
 
 var Colors = {
-    Background: new Color(48, 198, 230),
+    Background: Color.fromHex("#30c6e6"),
     Player: new Color(255, 0, 0),
     Enemy: new Color(0, 0, 255),
-    Land: new Color(234, 233, 163)
+    Land: Color.fromHex("#eae9a3")
 };
