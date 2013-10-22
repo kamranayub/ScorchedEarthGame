@@ -1,3 +1,131 @@
+/**
+Copyright (c) 2013 Erik Onarheim
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the GameTS Team.
+4. Neither the name of the creator nor the
+names of its contributors may be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+declare class Util {
+    static Equals(x: number, y: number, delta: number): boolean;
+}
+declare class Vector {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
+    public distance(v?: Vector): number;
+    public normalize(): Vector;
+    public scale(size): Vector;
+    public add(v: Vector): Vector;
+    public minus(v: Vector): Vector;
+    public dot(v: Vector): number;
+    public cross(v: Vector): number;
+}
+declare class Overlap {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
+}
+declare class SceneNode {
+    public children: Actor[];
+    constructor(actors?: Actor[]);
+    public publish(eventType: string, event: ActorEvent): void;
+    public update(engine: Engine, delta: number): void;
+    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
+    public debugDraw(ctx: CanvasRenderingContext2D): void;
+    public addChild(actor: Actor): void;
+    public removeChild(actor: Actor): void;
+}
+declare enum Side {
+    TOP,
+    BOTTOM,
+    LEFT,
+    RIGHT,
+    NONE,
+}
+declare class Actor {
+    public x: number;
+    public y: number;
+    private height;
+    private width;
+    public rotation: number;
+    public rx: number;
+    public scale: number;
+    public sx: number;
+    public dx: number;
+    public dy: number;
+    public ax: number;
+    public ay: number;
+    public invisible: boolean;
+    private actionQueue;
+    private eventDispatcher;
+    private sceneNode;
+    public solid: boolean;
+    public animations: {
+        [key: string]: Drawing.Animation;
+    };
+    public currentAnimation: Drawing.Animation;
+    public color: Color;
+    constructor(x?: number, y?: number, width?: number, height?: number, color?: Color);
+    public addChild(actor: Actor): void;
+    public removeChild(actor: Actor): void;
+    public playAnimation(key): void;
+    public addEventListener(eventName: string, handler: (event?: ActorEvent) => void): void;
+    public triggerEvent(eventName: string, event?: ActorEvent): void;
+    public getCenter(): Vector;
+    public getWidth(): number;
+    public getHeight(): number;
+    public getLeft(): number;
+    public getRight(): number;
+    public getTop(): number;
+    public getBottom(): number;
+    private getOverlap(box);
+    public collides(box: Actor): Side;
+    public within(actor: Actor, distance: number): boolean;
+    public addAnimation(key: any, animation: Drawing.Animation): void;
+    public moveTo(x: number, y: number, speed: number): Actor;
+    public moveBy(x: number, y: number, time: number): Actor;
+    public rotateTo(angleRadians: number, speed: number): Actor;
+    public rotateBy(angleRadians: number, time: number): Actor;
+    public scaleTo(size: number, speed: number): Actor;
+    public scaleBy(size: number, time: number): Actor;
+    public blink(frequency: number, duration: number): Actor;
+    public delay(seconds: number): Actor;
+    public repeat(times?: number): Actor;
+    public repeatForever(): Actor;
+    public update(engine: Engine, delta: number): void;
+    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
+    public debugDraw(ctx: CanvasRenderingContext2D): void;
+}
+declare class Label extends Actor {
+    public text: string;
+    public spriteFont: Drawing.SpriteFont;
+    constructor(text?: string, x?: number, y?: number, spriteFont?: Drawing.SpriteFont);
+    public update(engine: Engine, delta: number): void;
+    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
+    public debugDraw(ctx: CanvasRenderingContext2D): void;
+}
 interface IAction {
     x: number;
     y: number;
@@ -170,36 +298,103 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+LOSS OF USE, DATA, OR PROFITS; OR BUSIENSS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-declare class Util {
-    static Equals(x: number, y: number, delta: number): boolean;
+declare enum Log {
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+    FATAL,
 }
-declare class Vector {
-    public x: number;
-    public y: number;
-    constructor(x: number, y: number);
-    public distance(v?: Vector): number;
-    public normalize(): Vector;
-    public scale(size): Vector;
-    public add(v: Vector): Vector;
-    public minus(v: Vector): Vector;
-    public dot(v: Vector): number;
-    public cross(v: Vector): number;
+interface IAppender {
+    log(message: string, level: Log);
+}
+declare class ConsoleAppender implements IAppender {
+    constructor();
+    public log(message: string, level: Log): void;
+}
+declare class ScreenAppender implements IAppender {
+    private _messages;
+    private canvas;
+    private ctx;
+    constructor(width?: number, height?: number);
+    public log(message: string, level: Log): void;
+}
+declare class Logger {
+    private static _instance;
+    private appenders;
+    public defaultLevel: Log;
+    constructor();
+    static getInstance(): Logger;
+    public addAppender(appender: IAppender): void;
+    public log(message: string, level?: Log): void;
+}
+declare enum EventType {
+    KEYDOWN,
+    KEYUP,
+    KEYPRESS,
+    MOUSEDOWN,
+    MOUSEUP,
+    MOUSECLICK,
+    USEREVENT,
+    COLLISION,
+    BLUR,
+    FOCUS,
+    UPDATE,
+}
+declare class ActorEvent {
+    constructor();
+}
+declare class CollisonEvent extends ActorEvent {
+    public actor: Actor;
+    public other: Actor;
+    public side: Side;
+    constructor(actor: Actor, other: Actor, side: Side);
+}
+declare class UpdateEvent extends ActorEvent {
+    public delta: number;
+    constructor(delta: number);
+}
+declare class KeyEvent extends ActorEvent {
+    public actor: Actor;
+    public key: Keys;
+    constructor(actor: Actor, key: Keys);
+}
+declare class KeyDown extends ActorEvent {
+    public key: Keys;
+    constructor(key: Keys);
+}
+declare class KeyUp extends ActorEvent {
+    public key: Keys;
+    constructor(key: Keys);
+}
+declare class KeyPress extends ActorEvent {
+    public key: Keys;
+    constructor(key: Keys);
+}
+declare class EventDispatcher {
+    private _handlers;
+    private queue;
+    private target;
+    constructor(target);
+    public publish(eventName: string, event?: ActorEvent): void;
+    public subscribe(eventName: string, handler: (event?: ActorEvent) => void): void;
+    public update(): void;
 }
 /**
 Copyright (c) 2013 Erik Onarheim
@@ -426,43 +621,6 @@ declare module Camera {
         public applyTransform(engine: Engine, delta: number): void;
     }
 }
-declare module Physics {
-    class SideScrollerPhysics implements Common.IPhysicsSystem {
-        public actor: Common.IActor;
-        public engine: Common.IEngine;
-        private gravity;
-        private onGround;
-        private actors;
-        constructor(actor: Common.IActor, engine: Common.IEngine);
-        public addActor(actor: Common.IActor): void;
-        public removeActor(actor: Common.IActor): void;
-        public getProperty(key: string): any;
-        public setProperty(key: string, value: any): void;
-        public setGravity(gravity: number): void;
-        public update(delta: number): void;
-    }
-    class SideScrollerInertiaPhysics implements Common.IPhysicsSystem {
-        private actors;
-        constructor();
-        public addActor(actor: Common.IActor): void;
-        public removeActor(actor: Common.IActor): void;
-        public getProperty(key: string): any;
-        public setProperty(key: string, value: any): void;
-        public update(delta: number): void;
-    }
-    class TopDownPhysics implements Common.IPhysicsSystem {
-        public engine: Common.IEngine;
-        private friction;
-        private actors;
-        constructor(engine: Common.IEngine);
-        public addActor(actor: Common.IActor): void;
-        public removeActor(actor: Common.IActor): void;
-        public setFriction(friction: number): void;
-        public getProperty(key: string): any;
-        public setProperty(key: string, value: any): void;
-        public update(delta: number): void;
-    }
-}
 declare module GameAudio {
     class Sound {
         private context;
@@ -484,87 +642,13 @@ declare class Color {
     public g: number;
     public b: number;
     public a: number;
+    static RED: string;
+    static BLUE: string;
+    static GREEN: string;
     constructor(r: number, g: number, b: number, a?: number);
+    static fromRGB(r: number, g: number, b: number): string;
+    static fromHex(hex: string): string;
     public toString(): string;
-}
-declare class Overlap {
-    public x: number;
-    public y: number;
-    constructor(x: number, y: number);
-}
-declare class SceneNode {
-    public children: SceneNode[];
-    constructor(actors?: SceneNode[]);
-    public update(engine: Engine, delta: number): void;
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
-    public debugDraw(ctx: CanvasRenderingContext2D): void;
-    public addChild(actor: SceneNode): void;
-    public removeChild(actor: SceneNode): void;
-}
-declare enum Side {
-    TOP,
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    NONE,
-}
-declare class Actor extends SceneNode {
-    public x: number;
-    public y: number;
-    public height: number;
-    public width: number;
-    public rotation: number;
-    public rx: number;
-    public scale: number;
-    public sx: number;
-    public dx: number;
-    public dy: number;
-    public ax: number;
-    public ay: number;
-    public invisible: boolean;
-    private actionQueue;
-    private eventDispatcher;
-    public solid: boolean;
-    public animations: {
-        [key: string]: Drawing.Animation;
-    };
-    public currentAnimation: Drawing.Animation;
-    public color: Color;
-    constructor(x?: number, y?: number, width?: number, height?: number, color?: Color);
-    public playAnimation(key): void;
-    public addEventListener(eventName: string, handler: (event?: ActorEvent) => void): void;
-    public triggerEvent(eventName: string, event?: ActorEvent): void;
-    public getWidth(): number;
-    public getHeight(): number;
-    public getLeft(): number;
-    public getRight(): number;
-    public getTop(): number;
-    public getBottom(): number;
-    private getOverlap(box);
-    public collides(box: Actor): Side;
-    public within(actor: Actor, distance: number): boolean;
-    public addAnimation(key: any, animation: Drawing.Animation): void;
-    public moveTo(x: number, y: number, speed: number): Actor;
-    public moveBy(x: number, y: number, time: number): Actor;
-    public rotateTo(angleRadians: number, speed: number): Actor;
-    public rotateBy(angleRadians: number, time: number): Actor;
-    public scaleTo(size: number, speed: number): Actor;
-    public scaleBy(size: number, time: number): Actor;
-    public blink(frequency: number, duration: number): Actor;
-    public delay(seconds: number): Actor;
-    public repeat(times?: number): Actor;
-    public repeatForever(): Actor;
-    public update(engine: Engine, delta: number): void;
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
-    public debugDraw(ctx: CanvasRenderingContext2D): void;
-}
-declare class Label extends Actor {
-    public text: string;
-    public spriteFont: Drawing.SpriteFont;
-    constructor(text?: string, x?: number, y?: number, spriteFont?: Drawing.SpriteFont);
-    public update(engine: Engine, delta: number): void;
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void;
-    public debugDraw(ctx: CanvasRenderingContext2D): void;
 }
 declare enum Keys {
     NUM_1 = 97,
@@ -614,88 +698,6 @@ declare enum Keys {
     SPACE = 32,
     ESC = 27,
 }
-declare enum Log {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-    FATAL,
-}
-interface IAppender {
-    log(message: string, level: Log);
-}
-declare class ConsoleAppender implements IAppender {
-    constructor();
-    public log(message: string, level: Log): void;
-}
-declare class ScreenAppender implements IAppender {
-    private _messages;
-    private canvas;
-    private ctx;
-    constructor(width?: number, height?: number);
-    public log(message: string, level: Log): void;
-}
-declare class Logger {
-    private static _instance;
-    private appenders;
-    public defaultLevel: Log;
-    constructor();
-    static getInstance(): Logger;
-    public addAppender(appender: IAppender): void;
-    public log(message: string, level?: Log): void;
-}
-declare enum EventType {
-    KEYDOWN,
-    KEYUP,
-    KEYPRESS,
-    MOUSEDOWN,
-    MOUSEUP,
-    MOUSECLICK,
-    USEREVENT,
-    COLLISION,
-    BLUR,
-    FOCUS,
-    UPDATE,
-}
-declare class ActorEvent {
-    constructor();
-}
-declare class CollisonEvent extends ActorEvent {
-    public actor: Actor;
-    public other: Actor;
-    public side: Side;
-    constructor(actor: Actor, other: Actor, side: Side);
-}
-declare class UpdateEvent extends ActorEvent {
-    public delta: number;
-    constructor(delta: number);
-}
-declare class KeyEvent extends ActorEvent {
-    public actor: Actor;
-    public key: Keys;
-    constructor(actor: Actor, key: Keys);
-}
-declare class KeyDown extends ActorEvent {
-    public key: Keys;
-    constructor(key: Keys);
-}
-declare class KeyUp extends ActorEvent {
-    public key: Keys;
-    constructor(key: Keys);
-}
-declare class KeyPress extends ActorEvent {
-    public key: Keys;
-    constructor(key: Keys);
-}
-declare class EventDispatcher {
-    private _handlers;
-    private queue;
-    private target;
-    constructor(target);
-    public publish(eventName: string, event?: ActorEvent): void;
-    public subscribe(eventName: string, handler: (event?: ActorEvent) => void): void;
-    public update(): void;
-}
 declare class Engine {
     public canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
@@ -704,6 +706,8 @@ declare class Engine {
     private hasStarted;
     private eventDispatcher;
     public keys: number[];
+    public keysDown: number[];
+    public keysUp: number[];
     public camera: Camera.ICamera;
     public currentScene: SceneNode;
     public rootScene: SceneNode;
@@ -719,6 +723,9 @@ declare class Engine {
     public getWidth(): number;
     public getHeight(): number;
     private init();
+    public isKeyDown(key: Keys): boolean;
+    public isKeyPressed(key: Keys): boolean;
+    public isKeyUp(key: Keys): boolean;
     private update(delta);
     private draw(delta);
     public start(): void;

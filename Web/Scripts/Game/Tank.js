@@ -18,8 +18,8 @@ var Tank = (function (_super) {
         _super.prototype.draw.call(this, ctx, delta);
 
         // get center
-        var centerX = this.x + this.width / 2;
-        var centerY = this.y + this.height / 2;
+        var centerX = this.x + this.getWidth() / 2;
+        var centerY = this.y + this.getHeight() / 2;
 
         // draw barrel
         ctx.save();
@@ -52,7 +52,6 @@ var PlayerTank = (function (_super) {
         _super.call(this, x, y, Colors.Player);
         this.currentFirepowerAccelDelta = 0;
 
-        // TODO: Make Erik fix this; actors cannot listen to their own events
         this.addEventListener('keydown', this.handleKeyDown);
         this.addEventListener('keyup', this.handleKeyUp);
     }
@@ -81,17 +80,21 @@ var PlayerTank = (function (_super) {
     };
 
     PlayerTank.prototype.incrementFirepower = function (delta) {
-        if (this.firepower >= Config.firepowerMax)
+        if (this.firepower >= Config.firepowerMax) {
+            this.firepower = Config.firepowerMax;
             return;
+        }
 
-        this.firepower += +(this.currentFirepowerAccelDelta * delta / 1000).toFixed(0);
+        this.firepower += Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
     };
 
     PlayerTank.prototype.decrementFirepower = function (delta) {
-        if (this.firepower <= Config.firepowerMin)
+        if (this.firepower <= Config.firepowerMin) {
+            this.firepower = Config.firepowerMin;
             return;
+        }
 
-        this.firepower -= +(this.currentFirepowerAccelDelta * delta / 1000).toFixed(0);
+        this.firepower -= Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
     };
 
     PlayerTank.prototype.handleKeyDown = function (event) {

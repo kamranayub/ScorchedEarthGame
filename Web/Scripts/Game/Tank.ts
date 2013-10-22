@@ -19,8 +19,8 @@ class Tank extends Actor {
         super.draw(ctx, delta);
 
         // get center
-        var centerX: number = this.x + this.width / 2;
-        var centerY: number = this.y + this.height / 2;
+        var centerX: number = this.x + this.getWidth() / 2;
+        var centerY: number = this.y + this.getHeight() / 2;
 
         // draw barrel
         ctx.save();
@@ -62,7 +62,6 @@ class PlayerTank extends Tank {
     constructor(x?: number, y?: number) {
         super(x, y, Colors.Player);
 
-        // TODO: Make Erik fix this; actors cannot listen to their own events
         this.addEventListener('keydown', this.handleKeyDown);
         this.addEventListener('keyup', this.handleKeyUp);        
     }
@@ -100,19 +99,23 @@ class PlayerTank extends Tank {
 
     private incrementFirepower(delta: number): void {
 
-        if (this.firepower >= Config.firepowerMax)
+        if (this.firepower >= Config.firepowerMax) {
+            this.firepower = Config.firepowerMax;
             return;
+        }
 
-        this.firepower += +(this.currentFirepowerAccelDelta * delta / 1000).toFixed(0);
+        this.firepower += Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
 
     }
 
     private decrementFirepower(delta: number): void {
 
-        if (this.firepower <= Config.firepowerMin)
+        if (this.firepower <= Config.firepowerMin) {
+            this.firepower = Config.firepowerMin;
             return;
+        }
 
-        this.firepower -= +(this.currentFirepowerAccelDelta * delta / 1000).toFixed(0);
+        this.firepower -= Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
 
     }
 

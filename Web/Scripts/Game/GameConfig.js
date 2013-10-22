@@ -12,13 +12,13 @@
     // Default firing power
     defaultFirepower: 25,
     // Firepower adjustment delta
-    firepowerDelta: 5,
+    firepowerDelta: 15,
     // Firepower maximum speed
     firepowerMax: 100,
     // Firepower minimum speed
     firepowerMin: 0,
     // Firepower acceleration
-    firepowerAccel: 1
+    firepowerAccel: 0.5
 };
 
 var Colors = {
