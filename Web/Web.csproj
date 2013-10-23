@@ -30,6 +30,12 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TypeScriptTarget>ES5</TypeScriptTarget>
+    <TypeScriptSourceMap>true</TypeScriptSourceMap>
+    <TypeScriptIncludeComments>true</TypeScriptIncludeComments>
+    <TypeScriptGeneratesDeclarations>false</TypeScriptGeneratesDeclarations>
+    <TypeScriptModuleKind>AMD</TypeScriptModuleKind>
+    <TypeScriptOutFile>application.js</TypeScriptOutFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,6 +44,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TypeScriptTarget>ES5</TypeScriptTarget>
+    <TypeScriptSourceMap>false</TypeScriptSourceMap>
+    <TypeScriptIncludeComments>false</TypeScriptIncludeComments>
+    <TypeScriptGeneratesDeclarations>false</TypeScriptGeneratesDeclarations>
+    <TypeScriptModuleKind>AMD</TypeScriptModuleKind>
+    <TypeScriptOutFile>application.js</TypeScriptOutFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr3.Runtime">
@@ -134,8 +146,13 @@
     <Content Include="Scripts\Game\GameConfig.ts" />
     <Content Include="Scripts\Game\Engine.d.ts" />
     <Content Include="Scripts\Game\Engine.js" />
-    <Content Include="Scripts\Game\Game.ts" />
+    <Content Include="Scripts\Game\Game.ts">
+      <Generator>MSBuild:CompileTypeScript</Generator>
+    </Content>
     <Content Include="Scripts\Game\Tank.ts" />
+    <Content Include="Sounds\splode.mp3" />
+    <Content Include="Sounds\credits.txt" />
+    <Content Include="Spritesheets\spritesheet-explosion.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -162,8 +179,17 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" />
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
+  </Target>
+  <Target Name="CompileTypeScript">
+    <Message Text="Compiling TypeScript files" />
+    <Message Text="Creating response file typescriptcompiler.input" />
+    <WriteLinesToFile File="typescriptcompiler.input" Lines="&quot;$(ProjectDir)Scripts\Game\Game.ts&quot;" Overwrite="true" Encoding="Unicode" />
+    <Message Text="Executing tsc $(TypeScriptBuildConfigurations) @typescriptcompiler.input" />
+    <Exec Command="tsc $(TypeScriptBuildConfigurations) @typescriptcompiler.input" />
+    <Delete Files="typescriptcompiler.input" />
   </Target>
   <ProjectExtensions>
     <VisualStudio>

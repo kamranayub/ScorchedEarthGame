@@ -621,20 +621,21 @@ declare module Camera {
         public applyTransform(engine: Engine, delta: number): void;
     }
 }
-declare module GameAudio {
-    class Sound {
-        private context;
-        private volume;
-        private buffer;
-        private path;
-        private isLoaded;
-        constructor(soundPath: string, level?: number);
-        public setVolume(level: number): void;
-        private load();
-        public play(): void;
+declare module Media {
+    interface ISound {
+        setVolume(volume: number);
+        setLoop(loop: boolean);
+        play();
+        stop();
     }
-    class SoundManager {
-        constructor();
+    class Sound implements ISound {
+        private soundImpl;
+        private log;
+        constructor(path: string, volume?: number);
+        public setVolume(volume: number): void;
+        public setLoop(loop: boolean): void;
+        public play(): void;
+        public stop(): void;
     }
 }
 declare class Color {
@@ -642,12 +643,22 @@ declare class Color {
     public g: number;
     public b: number;
     public a: number;
-    static RED: string;
-    static BLUE: string;
-    static GREEN: string;
+    static Yellow: Color;
+    static Orange: Color;
+    static Red: Color;
+    static Vermillion: Color;
+    static Rose: Color;
+    static Magenta: Color;
+    static Violet: Color;
+    static Blue: Color;
+    static Azure: Color;
+    static Cyan: Color;
+    static Viridian: Color;
+    static Green: Color;
+    static Chartreuse: Color;
     constructor(r: number, g: number, b: number, a?: number);
-    static fromRGB(r: number, g: number, b: number): string;
-    static fromHex(hex: string): string;
+    static fromRGB(r: number, g: number, b: number, a?: number): Color;
+    static fromHex(hex: string): Color;
     public toString(): string;
 }
 declare enum Keys {

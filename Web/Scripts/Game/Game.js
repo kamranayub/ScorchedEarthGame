@@ -13,12 +13,12 @@ game.addChild(landmass);
 
 // create player
 var playerTank = new PlayerTank(50, 0);
-playerTank.y = landmass.y - playerTank.height;
+playerTank.y = landmass.y - playerTank.getHeight();
 game.addChild(playerTank);
 
 // enemy tank
 var enemyTank = new Tank(300, 0, Colors.Enemy);
-enemyTank.y = landmass.y - enemyTank.height;
+enemyTank.y = landmass.y - enemyTank.getHeight();
 game.addChild(enemyTank);
 
 // draw HUD

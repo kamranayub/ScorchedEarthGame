@@ -28,15 +28,21 @@
     firepowerMin: 0,
 
     // Firepower acceleration
-    firepowerAccel: 0.5
+    firepowerAccel: 0.5,
 
+    // Bullet speed modifier
+    bulletSpeedModifier: 2,
+
+    // Gravity constant
+    gravity: 50
 };
 
 var Colors = {
 
-    Background: Color.fromHex("#30c6e6"), 
+    Background: Color.fromHex("#30c6e6"),
     Player: new Color(255, 0, 0), // red
     Enemy: new Color(0, 0, 255), // blue
-    Land: Color.fromHex("#eae9a3")
+    Land: Color.fromHex("#eae9a3"),
+    Bullet: new Color(255, 0, 0)
 
 };

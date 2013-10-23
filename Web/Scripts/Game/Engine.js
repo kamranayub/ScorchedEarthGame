@@ -1524,29 +1524,96 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /// <reference path="MonkeyPatch.ts" />
-var GameAudio;
-(function (GameAudio) {
+/// <reference path="Log.ts" />
+var Media;
+(function (Media) {
     var Sound = (function () {
-        function Sound(soundPath, level) {
-            this.context = new (window).audioContext();
+        function Sound(path, volume) {
+            this.log = Logger.getInstance();
+            if ((window).audioContext) {
+                this.log.log("Using new Web Audio Api for " + path);
+                this.soundImpl = new WebAudio(path, volume);
+            } else {
+                this.log.log("Falling back to Audio ELement for " + path, Log.WARN);
+                this.soundImpl = new AudioTag(path, volume);
+            }
+        }
+        Sound.prototype.setVolume = function (volume) {
+            this.soundImpl.setVolume(volume);
+        };
+
+        Sound.prototype.setLoop = function (loop) {
+            this.soundImpl.setLoop(loop);
+        };
+
+        Sound.prototype.play = function () {
+            this.soundImpl.play();
+        };
+
+        Sound.prototype.stop = function () {
+            this.soundImpl.stop();
+        };
+        return Sound;
+    })();
+    Media.Sound = Sound;
+
+    var AudioTag = (function () {
+        function AudioTag(soundPath, volume) {
+            this.isLoaded = false;
+            this.audioElement = new Audio();
+            this.audioElement.src = soundPath;
+            if (volume) {
+                this.audioElement.volume = volume;
+            } else {
+                this.audioElement.volume = 1.0;
+            }
+        }
+        AudioTag.prototype.audioLoaded = function () {
+            this.isLoaded = true;
+        };
+
+        AudioTag.prototype.setVolume = function (volume) {
+            this.audioElement.volume = volume;
+        };
+
+        AudioTag.prototype.setLoop = function (loop) {
+            this.audioElement.loop = loop;
+        };
+
+        AudioTag.prototype.play = function () {
+            this.audioElement.play();
+        };
+
+        AudioTag.prototype.stop = function () {
+            this.audioElement.pause();
+        };
+        return AudioTag;
+    })();
+    var audioContext = new (window).audioContext();
+
+    var WebAudio = (function () {
+        function WebAudio(soundPath, volume) {
+            this.context = audioContext;
             this.volume = this.context.createGain();
             this.buffer = null;
+            this.sound = null;
             this.path = "";
             this.isLoaded = false;
+            this.loop = false;
             this.path = soundPath;
-            if (level) {
-                this.volume.gain.value = level;
+            if (volume) {
+                this.volume.gain.value = volume;
             } else {
                 this.volume.gain.value = 1;
             }
 
             this.load();
         }
-        Sound.prototype.setVolume = function (level) {
-            this.volume.gain.value = level;
+        WebAudio.prototype.setVolume = function (volume) {
+            this.volume.gain.value = volume;
         };
 
-        Sound.prototype.load = function () {
+        WebAudio.prototype.load = function () {
             var _this = this;
             var request = new XMLHttpRequest();
             request.open('GET', this.path);
@@ -1564,26 +1631,29 @@ var GameAudio;
             }
         };
 
-        Sound.prototype.play = function () {
+        WebAudio.prototype.setLoop = function (loop) {
+            this.loop = loop;
+        };
+
+        WebAudio.prototype.play = function () {
             if (this.isLoaded) {
-                var sound = this.context.createBufferSource();
-                sound.buffer = this.buffer;
-                sound.connect(this.volume);
+                this.sound = this.context.createBufferSource();
+                this.sound.buffer = this.buffer;
+                this.sound.loop = this.loop;
+                this.sound.connect(this.volume);
                 this.volume.connect(this.context.destination);
-                sound.noteOn(0);
+                this.sound.noteOn(0);
             }
         };
-        return Sound;
-    })();
-    GameAudio.Sound = Sound;
 
-    var SoundManager = (function () {
-        function SoundManager() {
-        }
-        return SoundManager;
+        WebAudio.prototype.stop = function () {
+            if (this.sound) {
+                this.sound.noteOff(0);
+            }
+        };
+        return WebAudio;
     })();
-    GameAudio.SoundManager = SoundManager;
-})(GameAudio || (GameAudio = {}));
+})(Media || (Media = {}));
 /**
 Copyright (c) 2013 Erik Onarheim
 All rights reserved.
@@ -1630,13 +1700,25 @@ var Color = (function () {
         this.b = b;
         this.a = a;
     }
-    Color.fromRGB = function (r, g, b) {
-        return new Color(r, g, b).toString();
+    Color.fromRGB = function (r, g, b, a) {
+        return new Color(r, g, b, a);
     };
 
-    Color.fromHex = function (hex) {
-        if (/^#?[0-9a-f]{6}$/i.test(hex)) {
-            return hex;
+    Color.fromHex = // rgba
+    function (hex) {
+        var hexRegEx = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?$/i;
+        var match = null;
+        if (match = hex.match(hexRegEx)) {
+            var r = parseInt(match[1], 16);
+            var g = parseInt(match[2], 16);
+            var b = parseInt(match[3], 16);
+            var a;
+            if (match[4]) {
+                a = parseInt(match[4]);
+            }
+            return new Color(r, g, b, a);
+        } else {
+            throw new Error("Invalid hex string: " + hex);
         }
     };
 
@@ -1647,9 +1729,19 @@ var Color = (function () {
         }
         return "rgb(" + result + ")";
     };
-    Color.RED = 'red';
-    Color.BLUE = 'blue';
-    Color.GREEN = 'green';
+    Color.Yellow = Color.fromHex('#00FFFF');
+    Color.Orange = Color.fromHex('#FFA500');
+    Color.Red = Color.fromHex('#FF0000');
+    Color.Vermillion = Color.fromHex('#FF5B31');
+    Color.Rose = Color.fromHex('#FF007F');
+    Color.Magenta = Color.fromHex('#FF00FF');
+    Color.Violet = Color.fromHex('#7F00FF');
+    Color.Blue = Color.fromHex('#0000FF');
+    Color.Azure = Color.fromHex('#007FFF');
+    Color.Cyan = Color.fromHex('#00FFFF');
+    Color.Viridian = Color.fromHex('#59978F');
+    Color.Green = Color.fromHex('#00FF00');
+    Color.Chartreuse = Color.fromHex('#7FFF00');
     return Color;
 })();
 
