@@ -55,7 +55,11 @@ var Landmass = (function (_super) {
         this.ctxWidth = ctxWidth;
         this.ctxHeight = ctxHeight;
         // config
-        this.config = {};
+        this.config = {
+            // Number of points resolved between edge points
+            // to generate terrain
+            terrainResolution: 2
+        };
         this.border = [];
 
         this.pixelBuffer = new Array(ctxWidth * ctxHeight);
@@ -113,7 +117,7 @@ var Landmass = (function (_super) {
 
         // kick it off
         this.border.push(new Point(0, leftY));
-        bisect(0, this.ctxWidth, lowerBounds, upperBounds, 2);
+        bisect(0, this.ctxWidth, lowerBounds, upperBounds, this.config.terrainResolution);
         this.border.push(new Point(this.ctxWidth, rightY));
 
         // sort the border by X coordiate
@@ -157,7 +161,7 @@ var Landmass = (function (_super) {
             drawLine(me.x, me.y, nx.x, nx.y);
         }
 
-        for (var col = 0; col < filledBorder.length; col++) {
+        for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
                 // offset row because it starts at origin (0) and we need
                 // it to be at the right offset

@@ -17,7 +17,11 @@ class Landmass extends Actor {
 
     // config
     config: any = {
-        
+
+        // Number of points resolved between edge points
+        // to generate terrain
+        terrainResolution: 2
+
     };
 
     // private vars
@@ -87,7 +91,7 @@ class Landmass extends Actor {
 
         // kick it off
         this.border.push(new Point(0, leftY));
-        bisect(0, this.ctxWidth, lowerBounds, upperBounds, 2);
+        bisect(0, this.ctxWidth, lowerBounds, upperBounds, this.config.terrainResolution);
         this.border.push(new Point(this.ctxWidth, rightY));
 
         // sort the border by X coordiate
@@ -129,7 +133,15 @@ class Landmass extends Actor {
         // fill in pixel buffer
 
         // march across the border pixels
-        for (var col = 0; col < filledBorder.length; col++) {
+        // NOTE: 
+        //
+        // There's a weird issue where the filled border
+        // is actually longer than ctxWidth, so we were overwriting
+        // pixels.
+        //
+        // We changed this so we only go up to ctxWidth and ignore
+        // extra shit.
+        for (var col = 0; col < this.ctxWidth; col++) {
 
             // move down and fill in every y pixel underneath us
             for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
@@ -142,5 +154,5 @@ class Landmass extends Actor {
         }
     }
 
-    
+
 }
