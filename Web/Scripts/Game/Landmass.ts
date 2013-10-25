@@ -49,8 +49,13 @@ class Landmass extends Actor {
         super.draw(ctx, delta);
 
         // Fill in the landmass
+        // Source: https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
+        // TODO Endian-ness
         var imageData = ctx.getImageData(0, 0, this.ctxWidth, this.ctxHeight);
-        var data = imageData.data;
+        var iData = imageData.data;
+        var buf = new ArrayBuffer(iData.length);
+        var buf8 = new (<any>window).Uint8ClampedArray(buf);
+        var data = new Uint32Array(buf);
         var _pb, _index;
 
         for (var col = 0; col < this.ctxWidth; col++) {
@@ -58,14 +63,29 @@ class Landmass extends Actor {
                 _pb = this.pixelBuffer[col + row * this.ctxWidth];
                 _index = (row * this.ctxWidth + col) * 4;
 
-                if (_pb === 1) {
-                    data[_index] = Colors.Land.r;
-                    data[++_index] = Colors.Land.g;
-                    data[++_index] = Colors.Land.b;
-                    data[++_index] = 255;
+                if (_pb) {
+                    data[row * this.ctxWidth + col] =
+                        (255 << 24) | // alpha
+                        (Colors.Land.b << 16) | // blue
+                        (Colors.Land.g << 8) | // green
+                        (Colors.Land.r); // red
+                } else {
+                    var r = iData[_index],
+                        g = iData[++_index],
+                        b = iData[++_index],
+                        a = iData[++_index];
+
+                    data[row * this.ctxWidth + col] =
+                        (a << 24) | // alpha
+                        (b << 16) | // blue
+                        (g << 8) | // green
+                        (r); // red
+                    
                 }
             }
         }
+
+        iData["set"](buf8);
 
         ctx.putImageData(imageData, 0, 0);
     }
