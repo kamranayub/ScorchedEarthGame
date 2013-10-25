@@ -48,20 +48,32 @@ class Landmass extends Actor {
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
         super.draw(ctx, delta);
 
-        ctx.fillStyle = Colors.Land.toString();
-
         // Fill in the landmass
-        var _ref;
+        var imageData = ctx.getImageData(0, 0, this.ctxWidth, this.ctxHeight);
+        var data = imageData.data;
+        var _pb, _index;
+
         for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight; row++) {
+                _pb = this.pixelBuffer[col + row * this.ctxWidth];
+                _index = (row * this.ctxWidth + col) * 4;
 
-                _ref = this.pixelBuffer[col + row * this.ctxWidth];
-
-                if (_ref === 1) {
-                    ctx.fillRect(col, row, 1, 1);
+                if (_pb === 1) {
+                    data[_index] = Colors.Land.r;
+                    data[++_index] = Colors.Land.g;
+                    data[++_index] = Colors.Land.b;
+                    data[++_index] = 255;
                 }
             }
         }
+
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    public getRandomPointOnBorder(): Point {
+
+        return this.border[Math.floor(Math.random() * this.border.length)];
+
     }
 
     private generate(): void {
@@ -129,6 +141,9 @@ class Landmass extends Actor {
             // this includes me and nx
             drawLine(me.x, me.y, nx.x, nx.y);
         }
+
+        // set border to filled border
+        this.border = filledBorder;
 
         // fill in pixel buffer
 

@@ -74,19 +74,30 @@ var Landmass = (function (_super) {
     Landmass.prototype.draw = function (ctx, delta) {
         _super.prototype.draw.call(this, ctx, delta);
 
-        ctx.fillStyle = Colors.Land.toString();
-
         // Fill in the landmass
-        var _ref;
+        var imageData = ctx.getImageData(0, 0, this.ctxWidth, this.ctxHeight);
+        var data = imageData.data;
+        var _pb, _index;
+
         for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight; row++) {
-                _ref = this.pixelBuffer[col + row * this.ctxWidth];
+                _pb = this.pixelBuffer[col + row * this.ctxWidth];
+                _index = (row * this.ctxWidth + col) * 4;
 
-                if (_ref === 1) {
-                    ctx.fillRect(col, row, 1, 1);
+                if (_pb === 1) {
+                    data[_index] = Colors.Land.r;
+                    data[++_index] = Colors.Land.g;
+                    data[++_index] = Colors.Land.b;
+                    data[++_index] = 255;
                 }
             }
         }
+
+        ctx.putImageData(imageData, 0, 0);
+    };
+
+    Landmass.prototype.getRandomPointOnBorder = function () {
+        return this.border[Math.floor(Math.random() * this.border.length)];
     };
 
     Landmass.prototype.generate = function () {
@@ -160,6 +171,9 @@ var Landmass = (function (_super) {
             // this includes me and nx
             drawLine(me.x, me.y, nx.x, nx.y);
         }
+
+        // set border to filled border
+        this.border = filledBorder;
 
         for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
@@ -374,21 +388,28 @@ var landmass = new Landmass(game.canvas.width, game.canvas.height);
 game.addChild(landmass);
 
 // create player
-//var playerTank = new PlayerTank(50, 0);
-//playerTank.y = landmass.y - playerTank.getHeight();
-//game.addChild(playerTank);
+var playerTank = new PlayerTank(0, 0);
+var playerPos = landmass.getRandomPointOnBorder();
+playerTank.x = playerPos.x;
+playerTank.y = playerPos.y - playerTank.getHeight();
+game.addChild(playerTank);
+
 // enemy tank
-//var enemyTank = new Tank(300, 0, Colors.Enemy);
-//enemyTank.y = landmass.y - enemyTank.getHeight();
-//game.addChild(enemyTank);
+var enemyTank = new Tank(300, 0, Colors.Enemy);
+var enemyPos = landmass.getRandomPointOnBorder();
+enemyTank.x = enemyPos.x;
+enemyTank.y = enemyPos.y - enemyTank.getHeight();
+game.addChild(enemyTank);
+
 // draw HUD
-//var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-//powerIndicator.color = Colors.Player;
-//powerIndicator.scale = 1.5;
-//powerIndicator.addEventListener('update', () => {
-//    powerIndicator.text = "Power: " + playerTank.firepower;
-//});
-//game.addChild(powerIndicator);
+var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
+powerIndicator.color = Colors.Player;
+powerIndicator.scale = 1.5;
+powerIndicator.addEventListener('update', function () {
+    powerIndicator.text = "Power: " + playerTank.firepower;
+});
+game.addChild(powerIndicator);
+
 // run the mainloop
 game.start();
 //# sourceMappingURL=game.js.map

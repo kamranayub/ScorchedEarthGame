@@ -2,7 +2,6 @@
 /// <reference path="GameConfig.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
-
 var game = new Engine(640, 480, 'game');
 
 // Set background color
@@ -30,7 +29,7 @@ game.addChild(enemyTank);
 var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
 powerIndicator.color = Colors.Player;
 powerIndicator.scale = 1.5;
-powerIndicator.addEventListener('update', () => {    
+powerIndicator.addEventListener('update', function () {
     powerIndicator.text = "Power: " + playerTank.firepower;
 });
 game.addChild(powerIndicator);
