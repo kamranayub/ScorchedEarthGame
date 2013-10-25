@@ -26,11 +26,11 @@
 };
 
 var Colors = {
-    Background: Color.fromHex("#30c6e6"),
-    Player: new Color(255, 0, 0),
-    Enemy: new Color(0, 0, 255),
-    Land: Color.fromHex("#eae9a3"),
-    Bullet: new Color(255, 0, 0)
+    Background: Color.fromHex("#141414"),
+    Player: Color.fromHex("#a73c3c"),
+    Enemy: Color.fromHex("#c0b72a"),
+    Land: Color.fromHex("#8c8c8c"),
+    Bullet: Color.fromHex("#ffffff")
 };
 /// <reference path="Engine.d.ts" />
 /// <reference path="GameConfig.ts" />
@@ -58,7 +58,7 @@ var Landmass = (function (_super) {
         this.config = {
             // Number of points resolved between edge points
             // to generate terrain
-            terrainResolution: 2
+            terrainResolution: 3
         };
         this.border = [];
 
@@ -105,7 +105,7 @@ var Landmass = (function (_super) {
     };
 
     Landmass.prototype.getRandomPointOnBorder = function () {
-        return this.border[Math.floor(Math.random() * this.border.length)];
+        return this.border[Math.floor(Math.random() * this.ctxWidth)];
     };
 
     Landmass.prototype.generate = function () {
@@ -182,6 +182,8 @@ var Landmass = (function (_super) {
 
         // set border to filled border
         this.border = filledBorder;
+
+        console.log("Filling terrain border", filledBorder);
 
         for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
@@ -386,7 +388,7 @@ var Bullet = (function (_super) {
 /// <reference path="GameConfig.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
-var game = new Engine(640, 480, 'game');
+var game = new Engine(null, null, 'game');
 
 // Set background color
 game.backgroundColor = Colors.Background;
@@ -398,6 +400,9 @@ game.addChild(landmass);
 // create player
 var playerTank = new PlayerTank(0, 0);
 var playerPos = landmass.getRandomPointOnBorder();
+
+console.log("Placing player", playerPos);
+
 playerTank.x = playerPos.x;
 playerTank.y = playerPos.y - playerTank.getHeight();
 game.addChild(playerTank);
@@ -405,6 +410,9 @@ game.addChild(playerTank);
 // enemy tank
 var enemyTank = new Tank(300, 0, Colors.Enemy);
 var enemyPos = landmass.getRandomPointOnBorder();
+
+console.log("Placing enemy", enemyPos);
+
 enemyTank.x = enemyPos.x;
 enemyTank.y = enemyPos.y - enemyTank.getHeight();
 game.addChild(enemyTank);

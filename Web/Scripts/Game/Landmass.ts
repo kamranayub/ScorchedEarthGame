@@ -20,7 +20,7 @@ class Landmass extends Actor {
 
         // Number of points resolved between edge points
         // to generate terrain
-        terrainResolution: 2
+        terrainResolution: 3
 
     };
 
@@ -92,7 +92,7 @@ class Landmass extends Actor {
 
     public getRandomPointOnBorder(): Point {
 
-        return this.border[Math.floor(Math.random() * this.border.length)];
+        return this.border[Math.floor(Math.random() * this.ctxWidth)];
 
     }
 

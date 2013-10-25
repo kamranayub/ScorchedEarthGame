@@ -3,7 +3,7 @@
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
 
-var game = new Engine(640, 480, 'game');
+var game = new Engine(null, null, 'game');
 
 // Set background color
 game.backgroundColor = Colors.Background;
@@ -15,6 +15,9 @@ game.addChild(landmass);
 // create player
 var playerTank = new PlayerTank(0, 0);
 var playerPos = landmass.getRandomPointOnBorder();
+
+console.log("Placing player", playerPos);
+
 playerTank.x = playerPos.x;
 playerTank.y = playerPos.y - playerTank.getHeight();
 game.addChild(playerTank);
@@ -22,6 +25,9 @@ game.addChild(playerTank);
 // enemy tank
 var enemyTank = new Tank(300, 0, Colors.Enemy);
 var enemyPos = landmass.getRandomPointOnBorder();
+
+console.log("Placing enemy", enemyPos);
+
 enemyTank.x = enemyPos.x;
 enemyTank.y = enemyPos.y - enemyTank.getHeight();
 game.addChild(enemyTank);
