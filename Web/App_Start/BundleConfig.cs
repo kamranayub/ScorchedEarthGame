@@ -11,7 +11,7 @@ namespace Web {
             
             bundles.Add(new Bundle("~/_scripts/game").Include(
                 "~/scripts/game/Engine.js",
-                "~/application.js"));
+                "~/scripts/game.js"));
 
         }
 
