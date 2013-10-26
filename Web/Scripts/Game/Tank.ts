@@ -12,7 +12,7 @@ class Tank extends Actor {
     angle: number;
 
     constructor(x?: number, y?: number, color?: Color) {
-        super(x, y, Config.tankWidth, Config.tankHeight, color);
+        super(x, y, Config.tankWidth, Config.tankHeight, color);        
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
@@ -253,11 +253,11 @@ class Bullet extends Actor {
     }
 
     private onCollision(e?: CollisonEvent): void {
-        //if (!this.splode) {
-        //    this.splodeSound.play();
-        //}
+        if (!this.splode) {
+            this.splodeSound.play();
+        }
 
-        //this.splode = true;        
+        this.splode = true;        
     }
 
 }

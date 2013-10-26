@@ -66,6 +66,7 @@ class Landmass extends Actor {
         // get a random radius to use
         this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
 
+        // TODO: Engine will not let me set w/h
         //this.width = this.radius * 2;
         //this.height = this.radius * 2;
 

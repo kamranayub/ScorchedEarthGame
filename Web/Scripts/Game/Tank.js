@@ -211,10 +211,11 @@ var Bullet = (function (_super) {
     };
 
     Bullet.prototype.onCollision = function (e) {
-        //if (!this.splode) {
-        //    this.splodeSound.play();
-        //}
-        //this.splode = true;
+        if (!this.splode) {
+            this.splodeSound.play();
+        }
+
+        this.splode = true;
     };
     return Bullet;
 })(Actor);
