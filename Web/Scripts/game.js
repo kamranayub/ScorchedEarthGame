@@ -77,7 +77,10 @@ var Landmass = (function (_super) {
         var randomX = this.radius * Math.cos(randomAngle);
         var randomY = this.radius * Math.sin(randomAngle);
 
-        return new Point(randomX + this.x + this.radius, randomY + this.y + this.radius);
+        return {
+            angle: randomAngle,
+            point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
+        };
     };
 
     Landmass.prototype.generate = function () {
@@ -113,23 +116,18 @@ var Tank = (function (_super) {
         this.firepower = Config.defaultFirepower;
     }
     Tank.prototype.draw = function (ctx, delta) {
-        var angle = Math.atan2(this.y, this.x);
-
-        console.log("Rotating player", angle);
-        console.log("Planet pos", this.landmassPos);
-
         ctx.fillStyle = this.color.toString();
-        ctx.fillRect(this.landmassPos.x, this.landmassPos.y, 2, 2);
 
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(angle);
-        ctx.fillRect(0, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
+        ctx.translate(this.landmass.x + this.landmass.radius, this.landmass.y + this.landmass.radius);
 
-        // super.draw(ctx, delta);
+        // account for phase shifting with canvas
+        ctx.rotate(this.angle + (Math.PI / 2));
+        ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
+
         // get center
-        var centerX = this.x + this.getWidth() / 2;
-        var centerY = this.y + this.getHeight() / 2;
+        var centerX = 0;
+        var centerY = -this.landmass.radius - this.getHeight() / 2;
 
         // draw barrel
         ctx.save();
@@ -142,13 +140,16 @@ var Tank = (function (_super) {
         ctx.restore();
     };
 
-    Tank.prototype.placeOn = function (landmass, point) {
+    Tank.prototype.placeOn = function (landmass, point, angle) {
         this.landmass = landmass;
-        this.landmassPos = point;
 
         // set x,y
+        this.angle = angle;
         this.x = point.x;
         this.y = point.y;
+
+        console.log("Rotating player", (this.angle * 180) / Math.PI, "degrees");
+        console.log("Planet border pos", this.x, this.y);
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
@@ -166,10 +167,15 @@ var Tank = (function (_super) {
     };
 
     Tank.prototype.getBullet = function () {
-        var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle) + this.x + (this.getWidth() / 2);
-        var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle) + this.y + (this.getHeight() / 2);
+        var centerX = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
+        var centerY = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
 
-        return new Bullet(barrelX, barrelY, this.barrelAngle, this.firepower);
+        console.log("Barrel Center", centerX, centerY, this.angle);
+
+        var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
+        var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
+
+        return new Bullet(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
     return Tank;
 })(Actor);
@@ -306,11 +312,10 @@ var Bullet = (function (_super) {
     };
 
     Bullet.prototype.onCollision = function (e) {
-        if (!this.splode) {
-            this.splodeSound.play();
-        }
-
-        this.splode = true;
+        //if (!this.splode) {
+        //    this.splodeSound.play();
+        //}
+        //this.splode = true;
     };
     return Bullet;
 })(Actor);
@@ -337,7 +342,7 @@ var playerPos = landmass.getRandomPointOnBorder();
 console.log("Placing player", playerPos);
 
 // place player on edge of landmass
-playerTank.placeOn(landmass, playerPos);
+playerTank.placeOn(landmass, playerPos.point, playerPos.angle);
 
 game.addChild(playerTank);
 

@@ -22,7 +22,7 @@ var playerPos = landmass.getRandomPointOnBorder();
 console.log("Placing player", playerPos);
 
 // place player on edge of landmass
-playerTank.placeOn(landmass, playerPos);
+playerTank.placeOn(landmass, playerPos.point, playerPos.angle);
 
 game.addChild(playerTank);
 

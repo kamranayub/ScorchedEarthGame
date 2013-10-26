@@ -49,13 +49,16 @@ class Landmass extends Actor {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
 
-    public getRandomPointOnBorder(): Point {
+    public getRandomPointOnBorder() {
 
         var randomAngle = Math.random() * Math.PI * 2;        
         var randomX = this.radius * Math.cos(randomAngle);
         var randomY = this.radius * Math.sin(randomAngle);
 
-        return new Point(randomX + this.x + this.radius, randomY + this.y + this.radius);
+        return {
+            angle: randomAngle,
+            point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
+        };
     }
 
     private generate(): void {       

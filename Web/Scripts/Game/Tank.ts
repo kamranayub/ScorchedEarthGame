@@ -9,7 +9,7 @@ class Tank extends Actor {
 
     landmass: Landmass;
 
-    landmassPos: Point;
+    angle: number;
 
     constructor(x?: number, y?: number, color?: Color) {
         super(x, y, Config.tankWidth, Config.tankHeight, color);
@@ -18,27 +18,20 @@ class Tank extends Actor {
         this.firepower = Config.defaultFirepower;
     }
 
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-
-        var angle = Math.atan2(this.y, this.x);
-
-        console.log("Rotating player", angle);
-        console.log("Planet pos", this.landmassPos);
+    public draw(ctx: CanvasRenderingContext2D, delta: number): void {        
 
         ctx.fillStyle = this.color.toString();
-        ctx.fillRect(this.landmassPos.x, this.landmassPos.y, 2, 2);
 
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(angle); 
-        ctx.fillRect(0, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());               
-               
+        ctx.translate(this.landmass.x + this.landmass.radius, this.landmass.y + this.landmass.radius);
 
-        // super.draw(ctx, delta);        
-
+        // account for phase shifting with canvas
+        ctx.rotate(this.angle + (Math.PI / 2));         
+        ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
+                
         // get center
-        var centerX: number = this.x + this.getWidth() / 2;
-        var centerY: number = this.y + this.getHeight() / 2;
+        var centerX: number = 0;
+        var centerY: number = -this.landmass.radius - this.getHeight() / 2;
 
         // draw barrel
         ctx.save();
@@ -52,13 +45,16 @@ class Tank extends Actor {
         ctx.restore();
     }
 
-    public placeOn(landmass: Landmass, point: Point): void {
+    public placeOn(landmass: Landmass, point: Point, angle: number): void {
         this.landmass = landmass;
-        this.landmassPos = point;
 
         // set x,y
+        this.angle = angle;
         this.x = point.x;
         this.y = point.y;
+
+        console.log("Rotating player", (this.angle * 180) / Math.PI, "degrees");
+        console.log("Planet border pos", this.x, this.y);
     }
 
     public moveBarrelLeft(angle: number, delta: number): void {
@@ -82,10 +78,15 @@ class Tank extends Actor {
     }
 
     public getBullet(): Bullet {
-        var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle) + this.x + (this.getWidth() / 2);
-        var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle) + this.y + (this.getHeight() / 2);
+        var centerX: number = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
+        var centerY: number = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
 
-        return new Bullet(barrelX, barrelY, this.barrelAngle, this.firepower);
+        console.log("Barrel Center", centerX, centerY, this.angle);
+
+        var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI/2)) + centerX;
+        var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
+
+        return new Bullet(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     }
 }
 
@@ -252,11 +253,11 @@ class Bullet extends Actor {
     }
 
     private onCollision(e?: CollisonEvent): void {
-        if (!this.splode) {
-            this.splodeSound.play();
-        }
+        //if (!this.splode) {
+        //    this.splodeSound.play();
+        //}
 
-        this.splode = true;        
+        //this.splode = true;        
     }
 
 }
