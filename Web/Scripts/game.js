@@ -22,7 +22,9 @@
     // Bullet speed modifier
     bulletSpeedModifier: 2,
     // Gravity constant
-    gravity: 50
+    gravity: 50,
+    // # of planets to generate
+    maxPlanets: 1
 };
 
 var Colors = {
@@ -50,21 +52,14 @@ var Point = (function () {
 
 var Landmass = (function (_super) {
     __extends(Landmass, _super);
-    function Landmass(ctxWidth, ctxHeight) {
+    function Landmass() {
         _super.call(this, 0, 0, null, null, Colors.Land);
-        this.ctxWidth = ctxWidth;
-        this.ctxHeight = ctxHeight;
         // config
         this.config = {
-            // Number of points resolved between edge points
-            // to generate terrain
-            terrainResolution: 3
+            minRadius: 35,
+            maxRadius: 200
         };
-        this.border = [];
 
-        this.pixelBuffer = new Array(ctxWidth * ctxHeight);
-        this.ctxHeight = ctxHeight;
-        this.ctxWidth = ctxWidth;
         this.generate();
     }
     Landmass.prototype.update = function (engine, delta) {
@@ -74,124 +69,36 @@ var Landmass = (function (_super) {
     Landmass.prototype.draw = function (ctx, delta) {
         _super.prototype.draw.call(this, ctx, delta);
 
-        // Fill in the landmass
-        // Source: https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
-        // TODO Endian-ness
-        var imageData = ctx.getImageData(0, 0, this.ctxWidth, this.ctxHeight);
-        var iData = imageData.data;
-        var buf = new ArrayBuffer(iData.length);
-        var buf8 = new (window).Uint8ClampedArray(buf);
-        var data = new Uint32Array(buf);
-        var _pb, _index;
-
-        for (var col = 0; col < this.ctxWidth; col++) {
-            for (var row = 0; row < this.ctxHeight; row++) {
-                _pb = this.pixelBuffer[col + row * this.ctxWidth];
-                _index = (row * this.ctxWidth + col) * 4;
-
-                if (_pb) {
-                    data[row * this.ctxWidth + col] = (255 << 24) | (Colors.Land.b << 16) | (Colors.Land.g << 8) | (Colors.Land.r);
-                } else {
-                    var r = iData[_index], g = iData[++_index], b = iData[++_index], a = iData[++_index];
-
-                    data[row * this.ctxWidth + col] = (a << 24) | (b << 16) | (g << 8) | (r);
-                }
-            }
-        }
-
-        iData["set"](buf8);
-
-        ctx.putImageData(imageData, 0, 0);
+        ctx.drawImage(this.planetCanvas, this.x, this.y);
     };
 
     Landmass.prototype.getRandomPointOnBorder = function () {
-        return this.border[Math.floor(Math.random() * this.ctxWidth)];
+        var randomAngle = Math.random() * Math.PI * 2;
+        var randomX = this.radius * Math.cos(randomAngle);
+        var randomY = this.radius * Math.sin(randomAngle);
+
+        return new Point(randomX + this.x + this.radius, randomY + this.y + this.radius);
     };
 
     Landmass.prototype.generate = function () {
-        var _this = this;
-        // land goes to bottom of screen (for now)
-        var lowerBounds = 300;
-        var upperBounds = Math.random() * (this.ctxHeight - 330) + 330;
+        // get a random radius to use
+        this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
 
-        var leftY = Math.random() * (upperBounds - lowerBounds) + lowerBounds;
-        var rightY = Math.random() * (upperBounds - lowerBounds) + lowerBounds;
+        //this.width = this.radius * 2;
+        //this.height = this.radius * 2;
+        // create off-screen canvas
+        this.planetCanvas = document.createElement('canvas');
+        this.planetCanvas.width = this.radius * 2 + 2;
+        this.planetCanvas.height = this.radius * 2 + 2;
 
-        // bisect
-        var bisect = function (minX, maxX, minY, maxY, maxDepth) {
-            if (maxDepth < 0)
-                return;
+        this.planetCtx = this.planetCanvas.getContext('2d');
 
-            var middleX = (minX + maxX) / 2.0;
-            var newY = Math.random() * (maxY - minY) + minY;
-            var point = new Point(middleX, newY);
-
-            // push point
-            _this.border.push(point);
-
-            // bisect
-            bisect(minX, middleX, minY, newY, maxDepth - 1);
-            bisect(middleX, maxX, minY, newY, maxDepth - 1);
-        };
-
-        // kick it off
-        this.border.push(new Point(0, leftY));
-        bisect(0, this.ctxWidth, lowerBounds, upperBounds, this.config.terrainResolution);
-        this.border.push(new Point(this.ctxWidth, rightY));
-
-        // sort the border by X coordiate
-        this.border.sort(function (a, b) {
-            return a.x - b.x;
-        });
-
-        // fill in the border
-        var filledBorder = [];
-
-        // draw line
-        var drawLine = function (x0, y0, x1, y1) {
-            var dx = Math.abs(x1 - x0);
-            var dy = Math.abs(y1 - y0);
-            var sx = (x0 < x1) ? 1 : -1;
-            var sy = (y0 < y1) ? 1 : -1;
-            var err = dx - dy;
-
-            while (true) {
-                filledBorder.push(new Point(x0, y0));
-
-                if ((x0 == x1) && (y0 == y1))
-                    break;
-                var e2 = 2 * err;
-                if (e2 > -dy) {
-                    err -= dy;
-                    x0 += sx;
-                }
-                if (e2 < dx) {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-
-        for (var i = 0; i < this.border.length - 1; i++) {
-            var me = this.border[i];
-            var nx = this.border[i + 1];
-
-            // this includes me and nx
-            drawLine(me.x, me.y, nx.x, nx.y);
-        }
-
-        // set border to filled border
-        this.border = filledBorder;
-
-        console.log("Filling terrain border", filledBorder);
-
-        for (var col = 0; col < this.ctxWidth; col++) {
-            for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
-                // offset row because it starts at origin (0) and we need
-                // it to be at the right offset
-                this.pixelBuffer[col + (row + filledBorder[col].y) * this.ctxWidth] = 1;
-            }
-        }
+        // draw arc
+        this.planetCtx.beginPath();
+        this.planetCtx.fillStyle = this.color.toString();
+        this.planetCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        this.planetCtx.closePath();
+        this.planetCtx.fill();
     };
     return Landmass;
 })(Actor);
@@ -206,8 +113,20 @@ var Tank = (function (_super) {
         this.firepower = Config.defaultFirepower;
     }
     Tank.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
+        var angle = Math.atan2(this.y, this.x);
 
+        console.log("Rotating player", angle);
+        console.log("Planet pos", this.landmassPos);
+
+        ctx.fillStyle = this.color.toString();
+        ctx.fillRect(this.landmassPos.x, this.landmassPos.y, 2, 2);
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(angle);
+        ctx.fillRect(0, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
+
+        // super.draw(ctx, delta);
         // get center
         var centerX = this.x + this.getWidth() / 2;
         var centerY = this.y + this.getHeight() / 2;
@@ -216,9 +135,20 @@ var Tank = (function (_super) {
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(this.barrelAngle);
-        ctx.fillStyle = this.color.toString();
         ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
         ctx.restore();
+
+        // draw on landmass/scale/rotate
+        ctx.restore();
+    };
+
+    Tank.prototype.placeOn = function (landmass, point) {
+        this.landmass = landmass;
+        this.landmassPos = point;
+
+        // set x,y
+        this.x = point.x;
+        this.y = point.y;
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
@@ -394,7 +324,10 @@ var game = new Engine(null, null, 'game');
 game.backgroundColor = Colors.Background;
 
 // create map
-var landmass = new Landmass(game.canvas.width, game.canvas.height);
+var landmass = new Landmass();
+landmass.x = landmass.radius * 2;
+landmass.y = landmass.radius * 2;
+
 game.addChild(landmass);
 
 // create player
@@ -403,29 +336,26 @@ var playerPos = landmass.getRandomPointOnBorder();
 
 console.log("Placing player", playerPos);
 
-playerTank.x = playerPos.x;
-playerTank.y = playerPos.y - playerTank.getHeight();
+// place player on edge of landmass
+playerTank.placeOn(landmass, playerPos);
+
 game.addChild(playerTank);
 
 // enemy tank
-var enemyTank = new Tank(300, 0, Colors.Enemy);
-var enemyPos = landmass.getRandomPointOnBorder();
-
-console.log("Placing enemy", enemyPos);
-
-enemyTank.x = enemyPos.x;
-enemyTank.y = enemyPos.y - enemyTank.getHeight();
-game.addChild(enemyTank);
-
+//var enemyTank = new Tank(300, 0, Colors.Enemy);
+//var enemyPos = landmass.getRandomPointOnBorder();
+//console.log("Placing enemy", enemyPos);
+//enemyTank.x = enemyPos.x;
+//enemyTank.y = enemyPos.y - enemyTank.getHeight();
+//game.addChild(enemyTank);
 // draw HUD
-var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-powerIndicator.color = Colors.Player;
-powerIndicator.scale = 1.5;
-powerIndicator.addEventListener('update', function () {
-    powerIndicator.text = "Power: " + playerTank.firepower;
-});
-game.addChild(powerIndicator);
-
+//var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
+//powerIndicator.color = Colors.Player;
+//powerIndicator.scale = 1.5;
+//powerIndicator.addEventListener('update', () => {
+//    powerIndicator.text = "Power: " + playerTank.firepower;
+//});
+//game.addChild(powerIndicator);
 // run the mainloop
 game.start();
 //# sourceMappingURL=game.js.map

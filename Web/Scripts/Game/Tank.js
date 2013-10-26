@@ -1,25 +1,20 @@
-﻿/// <reference path="Engine.d.ts" />
+/// <reference path="Engine.d.ts" />
 /// <reference path="GameConfig.ts" />
-
-class Tank extends Actor {
-
-    barrelAngle: number;
-
-    firepower: number;
-
-    landmass: Landmass;
-
-    landmassPos: Point;
-
-    constructor(x?: number, y?: number, color?: Color) {
-        super(x, y, Config.tankWidth, Config.tankHeight, color);
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Tank = (function (_super) {
+    __extends(Tank, _super);
+    function Tank(x, y, color) {
+        _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
     }
-
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-
+    Tank.prototype.draw = function (ctx, delta) {
         var angle = Math.atan2(this.y, this.x);
 
         console.log("Rotating player", angle);
@@ -30,15 +25,13 @@ class Tank extends Actor {
 
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(angle); 
-        ctx.fillRect(0, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());               
-               
+        ctx.rotate(angle);
+        ctx.fillRect(0, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
 
-        // super.draw(ctx, delta);        
-
+        // super.draw(ctx, delta);
         // get center
-        var centerX: number = this.x + this.getWidth() / 2;
-        var centerY: number = this.y + this.getHeight() / 2;
+        var centerX = this.x + this.getWidth() / 2;
+        var centerY = this.y + this.getHeight() / 2;
 
         // draw barrel
         ctx.save();
@@ -48,62 +41,52 @@ class Tank extends Actor {
         ctx.restore();
 
         // draw on landmass/scale/rotate
-
         ctx.restore();
-    }
+    };
 
-    public placeOn(landmass: Landmass, point: Point): void {
+    Tank.prototype.placeOn = function (landmass, point) {
         this.landmass = landmass;
         this.landmassPos = point;
 
         // set x,y
         this.x = point.x;
         this.y = point.y;
-    }
+    };
 
-    public moveBarrelLeft(angle: number, delta: number): void {
-
-        // clamp to -180 degrees
+    Tank.prototype.moveBarrelLeft = function (angle, delta) {
         if (this.barrelAngle <= Math.PI)
             return;
 
         this.barrelAngle -= angle * delta / 1000;
+    };
 
-    }
-
-    public moveBarrelRight(angle: number, delta: number): void {
-
-        // clamp to 180 degrees
+    Tank.prototype.moveBarrelRight = function (angle, delta) {
         if (this.barrelAngle >= Math.PI * 2)
             return;
 
         this.barrelAngle += angle * delta / 1000;
+    };
 
-    }
-
-    public getBullet(): Bullet {
+    Tank.prototype.getBullet = function () {
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle) + this.x + (this.getWidth() / 2);
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle) + this.y + (this.getHeight() / 2);
 
         return new Bullet(barrelX, barrelY, this.barrelAngle, this.firepower);
-    }
-}
+    };
+    return Tank;
+})(Actor);
 
-class PlayerTank extends Tank {
-
-    currentFirepowerAccelDelta: number = 0;
-
-    shouldFirepowerAccel: boolean;
-
-    constructor(x?: number, y?: number) {
-        super(x, y, Colors.Player);
+var PlayerTank = (function (_super) {
+    __extends(PlayerTank, _super);
+    function PlayerTank(x, y) {
+        _super.call(this, x, y, Colors.Player);
+        this.currentFirepowerAccelDelta = 0;
 
         this.addEventListener('keydown', this.handleKeyDown);
-        this.addEventListener('keyup', this.handleKeyUp);        
+        this.addEventListener('keyup', this.handleKeyUp);
     }
-
-    public update(engine: Engine, delta: number): void {
-        super.update(engine, delta);
+    PlayerTank.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
 
         if (this.shouldFirepowerAccel) {
             this.currentFirepowerAccelDelta += Config.firepowerAccel;
@@ -112,92 +95,67 @@ class PlayerTank extends Tank {
         }
 
         if (engine.isKeyPressed(Keys.LEFT)) {
-
             this.moveBarrelLeft(Config.barrelRotateVelocity, delta);
-
         } else if (engine.isKeyPressed(Keys.RIGHT)) {
-
             this.moveBarrelRight(Config.barrelRotateVelocity, delta);
-
         } else if (engine.isKeyPressed(Keys.UP)) {
-
             this.incrementFirepower(delta);
-
         } else if (engine.isKeyPressed(Keys.DOWN)) {
-
             this.decrementFirepower(delta);
-
         } else if (engine.isKeyUp(Keys.SPACE)) {
-
             var bullet = this.getBullet();
 
             engine.addChild(bullet);
         }
-    }
+    };
 
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-        super.draw(ctx, delta);
-    }    
+    PlayerTank.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+    };
 
-    private incrementFirepower(delta: number): void {
-
+    PlayerTank.prototype.incrementFirepower = function (delta) {
         if (this.firepower >= Config.firepowerMax) {
             this.firepower = Config.firepowerMax;
             return;
         }
 
         this.firepower += Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
+    };
 
-    }
-
-    private decrementFirepower(delta: number): void {
-
+    PlayerTank.prototype.decrementFirepower = function (delta) {
         if (this.firepower <= Config.firepowerMin) {
             this.firepower = Config.firepowerMin;
             return;
         }
 
         this.firepower -= Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
+    };
 
-    }
-
-    private handleKeyDown(event?: KeyEvent): void {
-        if (event === null) return;
-
-        if (event.key === Keys.UP || event.key === Keys.DOWN) {
-            this.shouldFirepowerAccel = true;            
-        }
-    }
-
-    private handleKeyUp(event?: KeyEvent): void {
-        if (event === null) return;
+    PlayerTank.prototype.handleKeyDown = function (event) {
+        if (event === null)
+            return;
 
         if (event.key === Keys.UP || event.key === Keys.DOWN) {
-            this.shouldFirepowerAccel = false;            
+            this.shouldFirepowerAccel = true;
         }
-    }
-}
+    };
 
-class Bullet extends Actor {
+    PlayerTank.prototype.handleKeyUp = function (event) {
+        if (event === null)
+            return;
 
-    startingAngle: number;
+        if (event.key === Keys.UP || event.key === Keys.DOWN) {
+            this.shouldFirepowerAccel = false;
+        }
+    };
+    return PlayerTank;
+})(Tank);
 
-    speed: number;
-
-    engine: Engine;
-
-    splodeSound: Media.ISound;
-
-    splodeSprite: Drawing.SpriteSheet;
-
-    splodeAnim: Drawing.Animation;
-
-    splode: boolean;
-
-    spriteDimensions: number = 130;
-
-    constructor(x: number, y: number, angle: number, power: number) {
-        super(x, y, 2, 2, Colors.Bullet);
+var Bullet = (function (_super) {
+    __extends(Bullet, _super);
+    function Bullet(x, y, angle, power) {
+        _super.call(this, x, y, 2, 2, Colors.Bullet);
+        this.spriteDimensions = 130;
 
         this.splodeSound = new Media.Sound("/Sounds/splode.mp3");
         this.splodeSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5, this.spriteDimensions, this.spriteDimensions);
@@ -207,16 +165,15 @@ class Bullet extends Actor {
         this.startingAngle = angle;
         this.speed = power * Config.bulletSpeedModifier;
 
-        // starts at angle and moves in that direction at power        
+        // starts at angle and moves in that direction at power
         this.dx = this.speed * Math.cos(this.startingAngle);
         this.dy = this.speed * Math.sin(this.startingAngle);
 
         // collisions
         this.addEventListener('collision', this.onCollision);
     }
-
-    public update(engine: Engine, delta: number): void {
-        super.update(engine, delta);
+    Bullet.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
 
         // store engine
         this.engine = engine;
@@ -227,7 +184,6 @@ class Bullet extends Actor {
         // pulled down by gravity
         this.dy += gravity;
 
-        // out of bounds
         if (this.y > engine.canvas.height) {
             engine.removeChild(this);
         }
@@ -238,10 +194,10 @@ class Bullet extends Actor {
             this.dy = 0;
             this.color = new Color(0, 0, 0, 0);
         }
-    }
+    };
 
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-        super.draw(ctx, delta);
+    Bullet.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
 
         if (this.splode) {
             // animation
@@ -249,14 +205,14 @@ class Bullet extends Actor {
             // TODO: Remove child once animation finishes
             // TODO: MEMORY LEAK
         }
-    }
+    };
 
-    private onCollision(e?: CollisonEvent): void {
+    Bullet.prototype.onCollision = function (e) {
         if (!this.splode) {
             this.splodeSound.play();
         }
 
-        this.splode = true;        
-    }
-
-}
+        this.splode = true;
+    };
+    return Bullet;
+})(Actor);

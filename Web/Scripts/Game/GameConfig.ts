@@ -34,7 +34,10 @@
     bulletSpeedModifier: 2,
 
     // Gravity constant
-    gravity: 50
+    gravity: 50,
+
+    // # of planets to generate
+    maxPlanets: 1
 };
 
 var Colors = {
