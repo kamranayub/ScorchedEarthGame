@@ -38,9 +38,6 @@ class Landmass extends CollisionActor {
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
-
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x + this.radius, this.y + this.radius, 2, 2);
     }
 
     public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number) {

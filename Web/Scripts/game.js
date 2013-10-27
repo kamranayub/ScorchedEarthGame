@@ -92,9 +92,6 @@ var Landmass = (function (_super) {
 
     Landmass.prototype.draw = function (ctx, delta) {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
-
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x + this.radius, this.y + this.radius, 2, 2);
     };
 
     Landmass.prototype.drawCollisionMap = function (ctx, delta) {
