@@ -25,7 +25,9 @@ var Config = {
     // Gravity constant
     gravity: 50,
     // # of planets to generate
-    maxPlanets: 4
+    maxPlanets: 4,
+    // amount of distance from canvas edges to spawn planets
+    planetGenerationPadding: 120
 };
 
 var Colors = {
@@ -46,6 +48,12 @@ var CollisionActor = (function (_super) {
     function CollisionActor(x, y, width, height, color) {
         _super.call(this, x, y, width, height, color);
     }
+    CollisionActor.prototype.drawCollisionMap = function (ctx, delta) {
+        var oldColor = this.color;
+        this.color = new Color(0, 0, 0, 255);
+        this.draw(ctx, delta);
+        this.color = oldColor;
+    };
     return CollisionActor;
 })(Actor);
 /// <reference path="Excalibur.d.ts" />
@@ -79,6 +87,10 @@ var Landmass = (function (_super) {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     };
 
+    Landmass.prototype.drawCollisionMap = function (ctx, delta) {
+        ctx.drawImage(this.planetCollisionCanvas, this.x, this.y);
+    };
+
     Landmass.prototype.getRandomPointOnBorder = function () {
         var randomAngle = Math.random() * Math.PI * 2;
         var randomX = this.radius * Math.cos(randomAngle);
@@ -90,6 +102,20 @@ var Landmass = (function (_super) {
         };
     };
 
+    Landmass.prototype.destruct = function (point, radius) {
+        this.planetCtx.beginPath();
+        this.planetCtx.globalCompositeOperation = 'destination-out';
+        this.planetCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCtx.closePath();
+        this.planetCtx.fill();
+
+        this.planetCollisionCtx.beginPath();
+        this.planetCollisionCtx.globalCompositeOperation = 'destination-out';
+        this.planetCollisionCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCollisionCtx.closePath();
+        this.planetCollisionCtx.fill();
+    };
+
     Landmass.prototype.generate = function () {
         // get a random radius to use
         this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
@@ -99,10 +125,14 @@ var Landmass = (function (_super) {
 
         // create off-screen canvas
         this.planetCanvas = document.createElement('canvas');
+        this.planetCollisionCanvas = document.createElement('canvas');
         this.planetCanvas.width = this.radius * 2 + 2;
         this.planetCanvas.height = this.radius * 2 + 2;
+        this.planetCollisionCanvas.width = this.radius * 2 + 2;
+        this.planetCollisionCanvas.height = this.radius * 2 + 2;
 
         this.planetCtx = this.planetCanvas.getContext('2d');
+        this.planetCollisionCtx = this.planetCollisionCanvas.getContext('2d');
 
         // draw arc
         this.planetCtx.beginPath();
@@ -110,6 +140,12 @@ var Landmass = (function (_super) {
         this.planetCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
         this.planetCtx.closePath();
         this.planetCtx.fill();
+
+        this.planetCollisionCtx.beginPath();
+        this.planetCollisionCtx.fillStyle = new Color(0, 0, 0, 255);
+        this.planetCollisionCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        this.planetCollisionCtx.closePath();
+        this.planetCollisionCtx.fill();
     };
     return Landmass;
 })(CollisionActor);
@@ -144,25 +180,6 @@ var Projectile = (function (_super) {
 
         var seconds = delta / 1000;
 
-        // TODO: This is pretty naive. We should use a collision map!
-        // There's a chance the projected pixel will actually be a color
-        // of what we can collide with when it may be some anti-aliasing
-        // or other color.
-        var collisionCtx = (window).collisionCtx;
-
-        // check collision with tanks
-        // get projection ahead of where we are currently
-        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
-        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
-
-        console.log("Projected pixel colors", projectedPixelData);
-
-        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
-            // collision!
-            this.onCollision();
-            return;
-        }
-
         // store engine
         this.engine = engine;
 
@@ -174,6 +191,20 @@ var Projectile = (function (_super) {
 
         if (this.y > engine.canvas.height) {
             engine.removeChild(this);
+            return;
+        }
+
+        var collisionCtx = (window).collisionCtx;
+
+        // check collision with tanks
+        // get projection ahead of where we are currently
+        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+
+        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
+            // collision!
+            this.onCollision();
+            return;
         }
     };
 
@@ -197,6 +228,14 @@ var Projectile = (function (_super) {
     };
 
     Projectile.prototype.onCollision = function () {
+        var _this = this;
+        // loop through landmasses
+        this.engine.currentScene.children.forEach(function (actor) {
+            if (actor instanceof Landmass) {
+                (actor).destruct(new Point(_this.x, _this.y), 20);
+            }
+        });
+
         // play sound
         Resources.Projectiles.explodeSound.play();
 
@@ -389,10 +428,7 @@ var Patches;
                 actor.draw(ctx, delta);
 
                 if (actor instanceof CollisionActor) {
-                    var oldColor = actor.color;
-                    actor.color = new Color(0, 0, 0, 255);
-                    actor.draw(collisionCtx, delta);
-                    actor.color = oldColor;
+                    (actor).drawCollisionMap(collisionCtx, delta);
                 }
             });
         };
@@ -425,11 +461,12 @@ for (var i = 0; i < Config.maxPlanets; i++) {
 }
 
 // position planets
-var _planet;
+var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
-    _planet.x = Math.floor(Math.random() * game.canvas.width);
-    _planet.y = Math.floor(Math.random() * game.canvas.height);
+    _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+    _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 }
 
 var placeTank = function (tank) {

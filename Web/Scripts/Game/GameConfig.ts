@@ -39,7 +39,10 @@ var Config = {
     gravity: 50,
 
     // # of planets to generate
-    maxPlanets: 4
+    maxPlanets: 4,
+
+    // amount of distance from canvas edges to spawn planets
+    planetGenerationPadding: 120
 };
 
 var Colors = {

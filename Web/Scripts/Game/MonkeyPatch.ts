@@ -27,11 +27,7 @@ module Patches {
                 actor.draw(ctx, delta);
 
                 if (actor instanceof CollisionActor) {
-
-                    var oldColor = actor.color;
-                    actor.color = new Color(0, 0, 0, 255);
-                    actor.draw(collisionCtx, delta);
-                    actor.color = oldColor;
+                    (<CollisionActor>actor).drawCollisionMap(collisionCtx, delta);
                 }
             });
         };

@@ -20,29 +20,7 @@ class Projectile extends Actor {
     public update(engine: Engine, delta: number): void {
         super.update(engine, delta);
 
-        var seconds = delta / 1000;
-
-        // TODO: This is pretty naive. We should use a collision map!
-        // There's a chance the projected pixel will actually be a color
-        // of what we can collide with when it may be some anti-aliasing
-        // or other color.
-
-        var collisionCtx: CanvasRenderingContext2D = (<any>window).collisionCtx;
-
-        // check collision with tanks
-        // get projection ahead of where we are currently
-        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
-        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
-
-        console.log("Projected pixel colors", projectedPixelData);
-
-        // collide with planets, enemies, and ourselves
-        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
-
-            // collision!
-            this.onCollision();
-            return;
-        }
+        var seconds = delta / 1000;        
 
         // store engine
         this.engine = engine;
@@ -56,6 +34,22 @@ class Projectile extends Actor {
         // out of bounds
         if (this.y > engine.canvas.height) {
             engine.removeChild(this);
+            return;
+        }
+
+        var collisionCtx: CanvasRenderingContext2D = (<any>window).collisionCtx;
+
+        // check collision with tanks
+        // get projection ahead of where we are currently
+        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+
+        // collide with planets, enemies, and ourselves
+        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
+
+            // collision!
+            this.onCollision();
+            return;
         }
     }
 
@@ -84,6 +78,13 @@ class Projectile extends Actor {
     }
 
     private onCollision(): void {
+
+        // loop through landmasses
+        this.engine.currentScene.children.forEach((actor: Actor) => {
+            if (actor instanceof Landmass) {
+                (<Landmass>actor).destruct(new Point(this.x, this.y), 20);
+            }
+        });
 
         // play sound
         Resources.Projectiles.explodeSound.play();

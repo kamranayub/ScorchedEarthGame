@@ -27,8 +27,10 @@ class Landmass extends CollisionActor {
     // private vars
 
     planetCanvas: HTMLCanvasElement;
+    planetCollisionCanvas: HTMLCanvasElement;
 
     planetCtx: CanvasRenderingContext2D;
+    planetCollisionCtx: CanvasRenderingContext2D;
 
     radius: number;
 
@@ -48,6 +50,10 @@ class Landmass extends CollisionActor {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
 
+    public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number) {
+        ctx.drawImage(this.planetCollisionCanvas, this.x, this.y);
+    }
+
     public getRandomPointOnBorder() {
 
         var randomAngle = Math.random() * Math.PI * 2;        
@@ -60,6 +66,21 @@ class Landmass extends CollisionActor {
         };
     }
 
+    public destruct(point: Point, radius: number) {
+       
+        this.planetCtx.beginPath();
+        this.planetCtx.globalCompositeOperation = 'destination-out';        
+        this.planetCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCtx.closePath();
+        this.planetCtx.fill();
+
+        this.planetCollisionCtx.beginPath();
+        this.planetCollisionCtx.globalCompositeOperation = 'destination-out';
+        this.planetCollisionCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCollisionCtx.closePath();
+        this.planetCollisionCtx.fill();
+    }
+
     private generate(): void {       
 
         // get a random radius to use
@@ -70,10 +91,14 @@ class Landmass extends CollisionActor {
 
         // create off-screen canvas
         this.planetCanvas = document.createElement('canvas');
+        this.planetCollisionCanvas = document.createElement('canvas');
         this.planetCanvas.width = this.radius * 2 + 2;
         this.planetCanvas.height = this.radius * 2 + 2;
+        this.planetCollisionCanvas.width = this.radius * 2 + 2;
+        this.planetCollisionCanvas.height = this.radius * 2 + 2;
 
         this.planetCtx = this.planetCanvas.getContext('2d');    
+        this.planetCollisionCtx = this.planetCollisionCanvas.getContext('2d');
 
         // draw arc
         this.planetCtx.beginPath();
@@ -81,6 +106,12 @@ class Landmass extends CollisionActor {
         this.planetCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
         this.planetCtx.closePath();
         this.planetCtx.fill();
+
+        this.planetCollisionCtx.beginPath();
+        this.planetCollisionCtx.fillStyle = new Color(0, 0, 0, 255);
+        this.planetCollisionCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        this.planetCollisionCtx.closePath();
+        this.planetCollisionCtx.fill();
     }
 
 

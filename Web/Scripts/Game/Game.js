@@ -24,11 +24,12 @@ for (var i = 0; i < Config.maxPlanets; i++) {
 }
 
 // position planets
-var _planet;
+var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
-    _planet.x = Math.floor(Math.random() * game.canvas.width);
-    _planet.y = Math.floor(Math.random() * game.canvas.height);
+    _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+    _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 }
 
 var placeTank = function (tank) {
