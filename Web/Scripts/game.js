@@ -154,18 +154,6 @@ var Landmass = (function (_super) {
 })(CollisionActor);
 var Resources;
 (function (Resources) {
-    var Projectiles = (function () {
-        function Projectiles(engine) {
-            Projectiles.explosionSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5, Projectiles.explosionDimensions, Projectiles.explosionDimensions);
-            Projectiles.explosionAnim = new Drawing.Animation(engine, Projectiles.explosionSprite.sprites, 0.1);
-        }
-        Projectiles.explosionDimensions = 130;
-
-        Projectiles.explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
-        return Projectiles;
-    })();
-    Resources.Projectiles = Projectiles;
-
     var Tanks = (function () {
         function Tanks() {
         }
@@ -224,24 +212,22 @@ var Explosion = (function (_super) {
 /// <reference path="Explosion.ts" />
 var Projectile = (function (_super) {
     __extends(Projectile, _super);
-    function Projectile(x, y, angle, power) {
-        _super.call(this, x, y, 2, 2, Colors.Projectile);
+    function Projectile(x, y, width, height, color, angle, power, explodeRadius) {
+        _super.call(this, x, y, width, height, color);
+        this.angle = angle;
+        this.explodeRadius = explodeRadius;
 
-        this.explodeRadius = 20;
-        this.startingAngle = angle;
+        // set speed
         this.speed = power * Config.bulletSpeedModifier;
 
         // starts at angle and moves in that direction at power
-        this.dx = this.speed * Math.cos(this.startingAngle);
-        this.dy = this.speed * Math.sin(this.startingAngle);
+        this.dx = this.speed * Math.cos(angle);
+        this.dy = this.speed * Math.sin(angle);
     }
     Projectile.prototype.update = function (engine, delta) {
         _super.prototype.update.call(this, engine, delta);
 
         var seconds = delta / 1000;
-
-        // store engine
-        this.engine = engine;
 
         // gravity
         var gravity = Config.gravity * seconds;
@@ -258,20 +244,16 @@ var Projectile = (function (_super) {
 
         // check collision with tanks
         // get projection ahead of where we are currently
-        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
-        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+        var collisionPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
 
-        if (!this.isColorOf(projectedPixelData, Colors.White)) {
+        if (!this.isColorOf(collisionPixelData, Colors.White)) {
             // collision!
-            this.onCollision();
+            this.onCollision(engine);
 
             // exit
             return;
         }
-    };
-
-    Projectile.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
     };
 
     /**
@@ -288,26 +270,45 @@ var Projectile = (function (_super) {
         return false;
     };
 
-    Projectile.prototype.onCollision = function () {
-        // play sound
-        Resources.Projectiles.explodeSound.play();
-
-        // play explosion animation
-        var splosion = new Explosion(this.x, this.y, this.explodeRadius);
-
-        // add explosion to engine
-        this.engine.addChild(splosion);
-
+    Projectile.prototype.onCollision = function (engine) {
         // remove myself
-        this.engine.removeChild(this);
+        engine.removeChild(this);
     };
+    Projectile.explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
     return Projectile;
 })(Actor);
+var Projectiles;
+(function (Projectiles) {
+    /**
+    * Basic projectile that everyone receives
+    */
+    var Missile = (function (_super) {
+        __extends(Missile, _super);
+        function Missile(x, y, angle, power) {
+            _super.call(this, x, y, 2, 2, Colors.Projectile, angle, power, 10);
+        }
+        Missile.prototype.onCollision = function (engine) {
+            _super.prototype.onCollision.call(this, engine);
+
+            // play sound
+            Projectile.explodeSound.play();
+
+            // play explosion animation
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+
+            // add explosion to engine
+            engine.addChild(splosion);
+        };
+        return Missile;
+    })(Projectile);
+    Projectiles.Missile = Missile;
+})(Projectiles || (Projectiles = {}));
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
+/// <reference path="Projectiles/MissileProjectile.ts" />
 var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
@@ -386,7 +387,7 @@ var Tank = (function (_super) {
         // Play sound
         Resources.Tanks.fireSound.play();
 
-        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
     return Tank;
 })(CollisionActor);
@@ -515,7 +516,6 @@ Patches.patchInCollisionMaps(game);
 
 // game.isDebug = true;
 // Resources
-new Resources.Projectiles(game);
 new Resources.Tanks();
 
 // Set background color
@@ -533,6 +533,8 @@ var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding,
 
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
+
+    // place randomly in canvas space
     _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
     _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 }

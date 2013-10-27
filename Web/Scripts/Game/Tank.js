@@ -3,6 +3,7 @@
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
+/// <reference path="Projectiles/MissileProjectile.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -87,7 +88,7 @@ var Tank = (function (_super) {
         // Play sound
         Resources.Tanks.fireSound.play();
 
-        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
     return Tank;
 })(CollisionActor);

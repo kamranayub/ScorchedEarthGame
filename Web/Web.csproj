@@ -166,11 +166,13 @@
       <DependentUpon>Web.config</DependentUpon>
     </Content>
     <Content Include="Views\Web.config" />
+    <TypeScriptCompile Include="Scripts\Game\Projectiles\MissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Resources.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="Models\" />
+    <Folder Include="Scripts\Game\Explosions\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

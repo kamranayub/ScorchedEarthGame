@@ -3,6 +3,7 @@
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
+/// <reference path="Projectiles/MissileProjectile.ts" />
 
 class Tank extends CollisionActor {
 
@@ -98,7 +99,7 @@ class Tank extends CollisionActor {
         // Play sound
         Resources.Tanks.fireSound.play();
 
-        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     }
 }
 

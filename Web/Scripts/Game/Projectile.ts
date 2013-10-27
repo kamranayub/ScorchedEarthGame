@@ -2,33 +2,25 @@
 
 class Projectile extends Actor {
 
-    startingAngle: number;
+    public static explodeSound: Media.ISound = new Media.Sound("/Sounds/Explosion-Small.wav")
 
     speed: number;
 
-    engine: Engine;
+    constructor(x: number, y: number, width: number, height: number, color: Color, public angle: number, power: number, public explodeRadius: number) {
+        super(x, y, width, height, color);
 
-    explodeRadius: number;
-
-    constructor(x: number, y: number, angle: number, power: number) {
-        super(x, y, 2, 2, Colors.Projectile);
-
-        this.explodeRadius = 20;
-        this.startingAngle = angle;
+        // set speed
         this.speed = power * Config.bulletSpeedModifier;
 
         // starts at angle and moves in that direction at power        
-        this.dx = this.speed * Math.cos(this.startingAngle);
-        this.dy = this.speed * Math.sin(this.startingAngle);
+        this.dx = this.speed * Math.cos(angle);
+        this.dy = this.speed * Math.sin(angle);
     }
 
     public update(engine: Engine, delta: number): void {
         super.update(engine, delta);
 
         var seconds = delta / 1000;        
-
-        // store engine
-        this.engine = engine;
 
         // gravity
         var gravity = Config.gravity * seconds;
@@ -46,22 +38,19 @@ class Projectile extends Actor {
 
         // check collision with tanks
         // get projection ahead of where we are currently
-        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
-        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+        var collisionPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
 
-        // collide with planets, enemies, and ourselves
-        if (!this.isColorOf(projectedPixelData, Colors.White)) {
+        // detect collision using pixel data on off-screen
+        // collision map
+        if (!this.isColorOf(collisionPixelData, Colors.White)) {
 
             // collision!
-            this.onCollision();
+            this.onCollision(engine);
 
             // exit
             return;
         }
-    }
-
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-        super.draw(ctx, delta);
     }
 
     /**
@@ -83,19 +72,9 @@ class Projectile extends Actor {
         return false;
     }
 
-    private onCollision(): void {        
-
-        // play sound
-        Resources.Projectiles.explodeSound.play();
-
-        // play explosion animation
-        var splosion = new Explosion(this.x, this.y, this.explodeRadius);
-
-        // add explosion to engine
-        this.engine.addChild(splosion);
-
+    public onCollision(engine: Engine): void {        
         // remove myself
-        this.engine.removeChild(this);
+        engine.removeChild(this);
     }
 
 }

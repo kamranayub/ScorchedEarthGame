@@ -11,7 +11,6 @@ Patches.patchInCollisionMaps(game);
 
 // game.isDebug = true;
 // Resources
-new Resources.Projectiles(game);
 new Resources.Tanks();
 
 // Set background color
@@ -29,6 +28,8 @@ var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding,
 
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
+
+    // place randomly in canvas space
     _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
     _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 }
