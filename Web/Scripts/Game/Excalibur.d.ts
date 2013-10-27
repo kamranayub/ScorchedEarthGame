@@ -11,15 +11,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -82,20 +82,22 @@ declare class Actor {
     private eventDispatcher;
     private sceneNode;
     public solid: boolean;
-    public animations: {
-        [key: string]: Drawing.Animation;
+    public frames: {
+        [key: string]: Drawing.IDrawable;
     };
-    public currentAnimation: Drawing.Animation;
+    public currentDrawing: Drawing.IDrawable;
     public color: Color;
     constructor(x?: number, y?: number, width?: number, height?: number, color?: Color);
     public addChild(actor: Actor): void;
     public removeChild(actor: Actor): void;
-    public playAnimation(key): void;
+    public setDrawing(key): void;
     public addEventListener(eventName: string, handler: (event?: ActorEvent) => void): void;
     public triggerEvent(eventName: string, event?: ActorEvent): void;
     public getCenter(): Vector;
     public getWidth(): number;
+    public setWidth(width): void;
     public getHeight(): number;
+    public setHeight(height): void;
     public getLeft(): number;
     public getRight(): number;
     public getTop(): number;
@@ -103,7 +105,7 @@ declare class Actor {
     private getOverlap(box);
     public collides(box: Actor): Side;
     public within(actor: Actor, distance: number): boolean;
-    public addAnimation(key: any, animation: Drawing.Animation): void;
+    public addDrawing(key: any, drawing: Drawing.IDrawable): void;
     public moveTo(x: number, y: number, speed: number): Actor;
     public moveBy(x: number, y: number, time: number): Actor;
     public rotateTo(angleRadians: number, speed: number): Actor;
@@ -360,7 +362,7 @@ declare enum EventType {
 declare class ActorEvent {
     constructor();
 }
-declare class CollisonEvent extends ActorEvent {
+declare class CollisionEvent extends ActorEvent {
     public actor: Actor;
     public other: Actor;
     public side: Side;
@@ -391,44 +393,17 @@ declare class EventDispatcher {
     private _handlers;
     private queue;
     private target;
+    private log;
     constructor(target);
     public publish(eventName: string, event?: ActorEvent): void;
     public subscribe(eventName: string, handler: (event?: ActorEvent) => void): void;
     public update(): void;
 }
-/**
-Copyright (c) 2013 Erik Onarheim
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-1. Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
-3. All advertising materials mentioning features or use of this software
-must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
-4. Neither the name of the creator nor the
-names of its contributors may be used to endorse or promote products
-derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
-EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 declare module Drawing {
     interface IDrawable {
         setScale(scale: number);
         setRotation(radians: number);
+        reset();
         draw(ctx: CanvasRenderingContext2D, x: number, y: number);
     }
     class SpriteSheet {
@@ -438,8 +413,10 @@ declare module Drawing {
         public sprites: Sprite[];
         private internalImage;
         constructor(path: string, columns: number, rows: number, spWidth: number, spHeight: number);
-        public getAnimationForRow(rowIndex: number, start: number, count: number, speed: number): Animation;
-        public getAnimationByIndices(indices: number[], speed: number): Animation;
+        public getAnimationByIndices(engine: Engine, indices: number[], speed: number): Animation;
+        public getAnimationBetween(engine: Engine, beginIndex: number, endIndex: number, speed: number): Animation;
+        public getAnimationForAll(engine: Engine, speed: number): Animation;
+        public getSprite(index: number): Sprite;
     }
     class SpriteFont extends SpriteSheet {
         public path: string;
@@ -460,6 +437,7 @@ declare module Drawing {
         constructor(image: HTMLImageElement, sx: number, sy: number, swidth: number, sheight: number);
         public setRotation(radians: number): void;
         public setScale(scale: number): void;
+        public reset(): void;
         public draw(ctx: CanvasRenderingContext2D, x: number, y: number): void;
     }
     enum AnimationType {
@@ -470,22 +448,20 @@ declare module Drawing {
     class Animation implements IDrawable {
         private sprites;
         private speed;
-        private maxIndex;
         private currIndex;
         private oldTime;
         private rotation;
         private scale;
-        public type: AnimationType;
-        private direction;
-        constructor(images: Sprite[], speed: number);
+        public loop: boolean;
+        private engine;
+        constructor(engine: Engine, images: Sprite[], speed: number, loop?: boolean);
         public setRotation(radians: number): void;
         public setScale(scale: number): void;
-        private cycle();
-        private pingpong();
-        private once();
         public reset(): void;
+        public isDone(): boolean;
         public tick(): void;
         public draw(ctx: CanvasRenderingContext2D, x: number, y: number): void;
+        public play(x: number, y: number): void;
     }
 }
 /**
@@ -501,15 +477,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -709,6 +685,12 @@ declare enum Keys {
     SPACE = 32,
     ESC = 27,
 }
+declare class AnimationNode {
+    public animation: Drawing.Animation;
+    public x: number;
+    public y: number;
+    constructor(animation: Drawing.Animation, x: number, y: number);
+}
 declare class Engine {
     public canvas: HTMLCanvasElement;
     public ctx: CanvasRenderingContext2D;
@@ -722,6 +704,7 @@ declare class Engine {
     public camera: Camera.ICamera;
     public currentScene: SceneNode;
     public rootScene: SceneNode;
+    private animations;
     public isFullscreen: boolean;
     public isDebug: boolean;
     public debugColor: Color;
@@ -729,6 +712,7 @@ declare class Engine {
     private logger;
     constructor(width?: number, height?: number, canvasElementId?: string);
     public addEventListener(eventName: string, handler: (event?: ActorEvent) => void): void;
+    public playAnimation(animation: Drawing.Animation, x: number, y: number): void;
     public addChild(actor: Actor): void;
     public removeChild(actor: Actor): void;
     public getWidth(): number;

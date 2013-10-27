@@ -1,4 +1,6 @@
-﻿var Config = {
+﻿/// <reference path="Excalibur.d.ts" />
+
+var Config = {
 
     // width of tanks
     tankWidth: 32,

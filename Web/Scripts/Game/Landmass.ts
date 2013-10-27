@@ -1,4 +1,4 @@
-/// <reference path="Engine.d.ts" />
+/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 
 class Point {
@@ -44,7 +44,7 @@ class Landmass extends Actor {
     }
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
-        super.draw(ctx, delta);
+        //super.draw(ctx, delta);
 
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
@@ -66,9 +66,8 @@ class Landmass extends Actor {
         // get a random radius to use
         this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
 
-        // TODO: Engine will not let me set w/h
-        //this.width = this.radius * 2;
-        //this.height = this.radius * 2;
+        this.setWidth(this.radius * 2);
+        this.setHeight(this.radius * 2);
 
         // create off-screen canvas
         this.planetCanvas = document.createElement('canvas');

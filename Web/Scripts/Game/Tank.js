@@ -1,5 +1,6 @@
-/// <reference path="Engine.d.ts" />
+﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="Resources.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -158,12 +159,6 @@ var Bullet = (function (_super) {
     __extends(Bullet, _super);
     function Bullet(x, y, angle, power) {
         _super.call(this, x, y, 2, 2, Colors.Bullet);
-        this.spriteDimensions = 130;
-
-        this.splodeSound = new Media.Sound("/Sounds/splode.mp3");
-        this.splodeSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5, this.spriteDimensions, this.spriteDimensions);
-        this.splodeAnim = new Drawing.Animation(this.splodeSprite.sprites, 0.1);
-        this.splodeAnim.type = Drawing.AnimationType.ONCE;
 
         this.startingAngle = angle;
         this.speed = power * Config.bulletSpeedModifier;
@@ -171,18 +166,32 @@ var Bullet = (function (_super) {
         // starts at angle and moves in that direction at power
         this.dx = this.speed * Math.cos(this.startingAngle);
         this.dy = this.speed * Math.sin(this.startingAngle);
-
-        // collisions
-        this.addEventListener('collision', this.onCollision);
     }
     Bullet.prototype.update = function (engine, delta) {
         _super.prototype.update.call(this, engine, delta);
+
+        var seconds = delta / 1000;
+
+        // TODO: This is pretty naive. We should use a collision map!
+        // There's a chance the projected pixel will actually be a color
+        // of what we can collide with when it may be some anti-aliasing
+        // or other color.
+        // check collision with tanks
+        // get projection ahead of where we are currently
+        var projectedPixel = new Point(2 + this.x + this.dx * seconds, 2 + this.y + this.dy * seconds);
+        var projectedPixelData = engine.ctx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+
+        if (this.isColorOf(projectedPixelData, Colors.Enemy) || this.isColorOf(projectedPixelData, Colors.Land) || this.isColorOf(projectedPixelData, Colors.Player)) {
+            // collision!
+            this.onCollision();
+            return;
+        }
 
         // store engine
         this.engine = engine;
 
         // gravity
-        var gravity = Config.gravity * delta / 1000;
+        var gravity = Config.gravity * seconds;
 
         // pulled down by gravity
         this.dy += gravity;
@@ -190,32 +199,36 @@ var Bullet = (function (_super) {
         if (this.y > engine.canvas.height) {
             engine.removeChild(this);
         }
-
-        if (this.splode) {
-            // TODO: Adjust pos for collisions
-            this.dx = 0;
-            this.dy = 0;
-            this.color = new Color(0, 0, 0, 0);
-        }
     };
 
     Bullet.prototype.draw = function (ctx, delta) {
         _super.prototype.draw.call(this, ctx, delta);
-
-        if (this.splode) {
-            // animation
-            this.splodeAnim.draw(ctx, this.x - (this.spriteDimensions / 2), this.y - (this.spriteDimensions / 2));
-            // TODO: Remove child once animation finishes
-            // TODO: MEMORY LEAK
-        }
     };
 
-    Bullet.prototype.onCollision = function (e) {
-        if (!this.splode) {
-            this.splodeSound.play();
+    /**
+    * Determines whether or not the given color is present
+    * in the given pixel array.
+    */
+    Bullet.prototype.isColorOf = function (pixels, color) {
+        for (var i = 0; i < pixels.length; i += 4) {
+            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
+                console.log("Collided with color", color);
+                return true;
+            }
         }
 
-        this.splode = true;
+        return false;
+    };
+
+    Bullet.prototype.onCollision = function () {
+        // play sound
+        Resources.Bullets.explodeSound.play();
+
+        // play explosion animation
+        Resources.Bullets.explosionAnim.play(this.x - (Resources.Bullets.explosionDimensions / 2), this.y - (Resources.Bullets.explosionDimensions / 2));
+
+        // remove myself
+        this.engine.removeChild(this);
     };
     return Bullet;
 })(Actor);

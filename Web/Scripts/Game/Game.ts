@@ -1,10 +1,15 @@
-﻿/// <reference path="Engine.d.ts" />
+﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
+/// <reference path="Resources.ts" />
 
 var game = new Engine(null, null, 'game');
-game.isDebug = true;
+// game.isDebug = true;
+
+// Resources
+var bulletResources = new Resources.Bullets(game);
+
 // Set background color
 game.backgroundColor = Colors.Background;
 
