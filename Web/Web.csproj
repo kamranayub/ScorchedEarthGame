@@ -153,8 +153,9 @@
     <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />
     <TypeScriptCompile Include="Scripts\Game\Landmass.ts" />
     <Content Include="Scripts\Game\Tank.ts" />
-    <Content Include="Sounds\splode.mp3" />
-    <Content Include="Sounds\credits.txt" />
+    <Content Include="Sounds\Explosion-Small.wav" />
+    <Content Include="Sounds\Fire.wav" />
+    <Content Include="Sounds\MoveBarrel.wav" />
     <Content Include="Spritesheets\spritesheet-explosion.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">

@@ -7,7 +7,7 @@ module Patches {
         collisionCanvas.id = "collisionCanvas";
         collisionCanvas.width = game.canvas.width;
         collisionCanvas.height = game.canvas.height;
-        var collisionCtx = (<any>window).collisionCtx = collisionCanvas.getContext('2d');
+        var collisionCtx = collisionCanvas.getContext('2d');
 
         if (game.isDebug) {
             document.body.appendChild(collisionCanvas);
@@ -31,5 +31,7 @@ module Patches {
                 }
             });
         };
+
+        (<any>game).collisionCtx = collisionCtx;
     }
 }

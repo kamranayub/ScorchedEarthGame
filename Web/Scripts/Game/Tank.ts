@@ -70,6 +70,8 @@ class Tank extends CollisionActor {
 
         this.barrelAngle -= angle * delta / 1000;
 
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     }
 
     public moveBarrelRight(angle: number, delta: number): void {
@@ -80,6 +82,8 @@ class Tank extends CollisionActor {
 
         this.barrelAngle += angle * delta / 1000;
 
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     }
 
     public getProjectile(): Projectile {
@@ -90,6 +94,9 @@ class Tank extends CollisionActor {
 
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI/2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
+
+        // Play sound
+        Resources.Tanks.fireSound.play();
 
         return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     }

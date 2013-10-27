@@ -60,6 +60,9 @@ var Tank = (function (_super) {
             return;
 
         this.barrelAngle -= angle * delta / 1000;
+
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     };
 
     Tank.prototype.moveBarrelRight = function (angle, delta) {
@@ -67,6 +70,9 @@ var Tank = (function (_super) {
             return;
 
         this.barrelAngle += angle * delta / 1000;
+
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     };
 
     Tank.prototype.getProjectile = function () {
@@ -77,6 +83,9 @@ var Tank = (function (_super) {
 
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
+
+        // Play sound
+        Resources.Tanks.fireSound.play();
 
         return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };

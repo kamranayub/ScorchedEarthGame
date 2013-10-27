@@ -6,9 +6,12 @@ class Projectile extends Actor {
 
     engine: Engine;
 
+    explodeRadius: number;
+
     constructor(x: number, y: number, angle: number, power: number) {
         super(x, y, 2, 2, Colors.Projectile);
 
+        this.explodeRadius = 20;
         this.startingAngle = angle;
         this.speed = power * Config.bulletSpeedModifier;
 
@@ -37,7 +40,7 @@ class Projectile extends Actor {
             return;
         }
 
-        var collisionCtx: CanvasRenderingContext2D = (<any>window).collisionCtx;
+        var collisionCtx: CanvasRenderingContext2D = (<any>engine).collisionCtx;
 
         // check collision with tanks
         // get projection ahead of where we are currently
@@ -45,10 +48,12 @@ class Projectile extends Actor {
         var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
 
         // collide with planets, enemies, and ourselves
-        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
+        if (!this.isColorOf(projectedPixelData, Colors.White)) {
 
             // collision!
             this.onCollision();
+
+            // exit
             return;
         }
     }
@@ -68,8 +73,7 @@ class Projectile extends Actor {
             if (pixels[i] === color.r &&
                 pixels[i + 1] === color.g &&
                 pixels[i + 2] === color.b &&
-                pixels[i + 3] === color.a) {
-                console.log("Collided with color", color);
+                pixels[i + 3] === color.a) {                
                 return true;
             }
         }
@@ -79,10 +83,10 @@ class Projectile extends Actor {
 
     private onCollision(): void {
 
-        // loop through landmasses
+        // loop through landmasses and destruct
         this.engine.currentScene.children.forEach((actor: Actor) => {
             if (actor instanceof Landmass) {
-                (<Landmass>actor).destruct(new Point(this.x, this.y), 20);
+                (<Landmass>actor).destruct(new Point(this.x, this.y), this.explodeRadius);
             }
         });
 

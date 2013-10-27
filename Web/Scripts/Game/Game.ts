@@ -13,7 +13,8 @@ Patches.patchInCollisionMaps(game);
 // game.isDebug = true;
 
 // Resources
-var bulletResources = new Resources.Projectiles(game);
+new Resources.Projectiles(game);
+new Resources.Tanks();
 
 // Set background color
 game.backgroundColor = Colors.Background;

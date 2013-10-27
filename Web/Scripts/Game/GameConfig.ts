@@ -46,7 +46,7 @@ var Config = {
 };
 
 var Colors = {
-
+    White: Color.fromHex("#ffffff"),
     Background: Color.fromHex("#141414"),
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),

@@ -31,6 +31,7 @@ var Config = {
 };
 
 var Colors = {
+    White: Color.fromHex("#ffffff"),
     Background: Color.fromHex("#141414"),
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
@@ -158,16 +159,26 @@ var Resources;
         }
         Projectiles.explosionDimensions = 130;
 
-        Projectiles.explodeSound = new Media.Sound("/Sounds/splode.mp3");
+        Projectiles.explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
         return Projectiles;
     })();
     Resources.Projectiles = Projectiles;
+
+    var Tanks = (function () {
+        function Tanks() {
+        }
+        Tanks.fireSound = new Media.Sound("/Sounds/Fire.wav");
+        Tanks.moveBarrelSound = new Media.Sound("/Sounds/MoveBarrel.wav");
+        return Tanks;
+    })();
+    Resources.Tanks = Tanks;
 })(Resources || (Resources = {}));
 var Projectile = (function (_super) {
     __extends(Projectile, _super);
     function Projectile(x, y, angle, power) {
         _super.call(this, x, y, 2, 2, Colors.Projectile);
 
+        this.explodeRadius = 20;
         this.startingAngle = angle;
         this.speed = power * Config.bulletSpeedModifier;
 
@@ -194,16 +205,18 @@ var Projectile = (function (_super) {
             return;
         }
 
-        var collisionCtx = (window).collisionCtx;
+        var collisionCtx = (engine).collisionCtx;
 
         // check collision with tanks
         // get projection ahead of where we are currently
         var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
         var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
 
-        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
+        if (!this.isColorOf(projectedPixelData, Colors.White)) {
             // collision!
             this.onCollision();
+
+            // exit
             return;
         }
     };
@@ -219,7 +232,6 @@ var Projectile = (function (_super) {
     Projectile.prototype.isColorOf = function (pixels, color) {
         for (var i = 0; i < pixels.length; i += 4) {
             if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
-                console.log("Collided with color", color);
                 return true;
             }
         }
@@ -229,10 +241,10 @@ var Projectile = (function (_super) {
 
     Projectile.prototype.onCollision = function () {
         var _this = this;
-        // loop through landmasses
+        // loop through landmasses and destruct
         this.engine.currentScene.children.forEach(function (actor) {
             if (actor instanceof Landmass) {
-                (actor).destruct(new Point(_this.x, _this.y), 20);
+                (actor).destruct(new Point(_this.x, _this.y), _this.explodeRadius);
             }
         });
 
@@ -303,6 +315,9 @@ var Tank = (function (_super) {
             return;
 
         this.barrelAngle -= angle * delta / 1000;
+
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     };
 
     Tank.prototype.moveBarrelRight = function (angle, delta) {
@@ -310,6 +325,9 @@ var Tank = (function (_super) {
             return;
 
         this.barrelAngle += angle * delta / 1000;
+
+        // play sound
+        Resources.Tanks.moveBarrelSound.play();
     };
 
     Tank.prototype.getProjectile = function () {
@@ -320,6 +338,9 @@ var Tank = (function (_super) {
 
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
+
+        // Play sound
+        Resources.Tanks.fireSound.play();
 
         return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
@@ -409,7 +430,7 @@ var Patches;
         collisionCanvas.id = "collisionCanvas";
         collisionCanvas.width = game.canvas.width;
         collisionCanvas.height = game.canvas.height;
-        var collisionCtx = (window).collisionCtx = collisionCanvas.getContext('2d');
+        var collisionCtx = collisionCanvas.getContext('2d');
 
         if (game.isDebug) {
             document.body.appendChild(collisionCanvas);
@@ -432,6 +453,8 @@ var Patches;
                 }
             });
         };
+
+        (game).collisionCtx = collisionCtx;
     }
     Patches.patchInCollisionMaps = patchInCollisionMaps;
 })(Patches || (Patches = {}));
@@ -448,7 +471,8 @@ Patches.patchInCollisionMaps(game);
 
 // game.isDebug = true;
 // Resources
-var bulletResources = new Resources.Projectiles(game);
+new Resources.Projectiles(game);
+new Resources.Tanks();
 
 // Set background color
 game.backgroundColor = Colors.Background;
