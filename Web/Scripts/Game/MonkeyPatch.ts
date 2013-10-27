@@ -2,13 +2,12 @@
 
 module Patches {
     export function patchInCollisionMaps(game: Engine) {
-        var collisionCanvas = <HTMLCanvasElement>(<any>window).collisionCanvas;
+        var collisionCanvas = document.createElement("canvas");
 
         collisionCanvas.id = "collisionCanvas";
         collisionCanvas.width = game.canvas.width;
         collisionCanvas.height = game.canvas.height;
-        var collisionCtx = collisionCanvas.getContext('2d');
-        (<any>window).collisionCtx = collisionCtx;
+        var collisionCtx = (<any>window).collisionCtx = collisionCanvas.getContext('2d');
 
         if (game.isDebug) {
             document.body.appendChild(collisionCanvas);
@@ -17,7 +16,6 @@ module Patches {
         var oldDraw = Engine.prototype["draw"];
         Engine.prototype["draw"] = function (delta) {
 
-            var collisionCtx = (<CanvasRenderingContext2D>(<any>window).collisionCtx);
             collisionCtx.fillStyle = 'white';
             collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
 
@@ -25,8 +23,6 @@ module Patches {
         };
 
         SceneNode.prototype.draw = function (ctx: CanvasRenderingContext2D, delta: number) {
-            var collisionCtx = (<CanvasRenderingContext2D>(<any>window).collisionCtx);
-
             this.children.forEach(function (actor: Actor) {
                 actor.draw(ctx, delta);
 

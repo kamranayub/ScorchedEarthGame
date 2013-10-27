@@ -18,13 +18,13 @@ var Config = {
     barrelWidth: 2,
 
     // Default firing power
-    defaultFirepower: 25,
+    defaultFirepower: 300,
 
     // Firepower adjustment delta
-    firepowerDelta: 15,
+    firepowerDelta: 70,
 
     // Firepower maximum speed
-    firepowerMax: 100,
+    firepowerMax: 1000,
 
     // Firepower minimum speed
     firepowerMin: 0,
@@ -33,13 +33,13 @@ var Config = {
     firepowerAccel: 0.5,
 
     // Projectile speed modifier
-    bulletSpeedModifier: 2,
+    bulletSpeedModifier: 0.4,
 
     // Gravity constant
     gravity: 50,
 
     // # of planets to generate
-    maxPlanets: 1
+    maxPlanets: 4
 };
 
 var Colors = {

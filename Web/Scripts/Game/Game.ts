@@ -6,8 +6,6 @@
 /// <reference path="CollisionActor.ts" />
 /// <reference path="MonkeyPatch.ts" />
 
-var collisionCanvas = (<any>window).collisionCanvas = document.createElement("canvas");
-
 var game = new Engine(null, null, 'game');
 
 Patches.patchInCollisionMaps(game);
@@ -21,36 +19,58 @@ var bulletResources = new Resources.Projectiles(game);
 game.backgroundColor = Colors.Background;
 
 // create map
-var landmass = new Landmass();
-landmass.x = 200;
-landmass.y = 200;
+var planets: Landmass[] = [];
+for (var i = 0; i < Config.maxPlanets; i++) {
+    planets.push(new Landmass());
+    game.addChild(planets[i])
+}
 
-game.addChild(landmass);
+// position planets
+var _planet;
+for (var i = 0; i < planets.length; i++) {
 
-var landmass2 = new Landmass();
-landmass2.x = 500;
-landmass2.y = 500;
+    _planet = planets[i];
+    _planet.x = Math.floor(Math.random() * game.canvas.width);
+    _planet.y = Math.floor(Math.random() * game.canvas.height);
 
-game.addChild(landmass2);
+}
 
-// create player
+var placeTank = function (tank: Tank) {
+    // create player
+
+    var placed = false;
+    var randomPlanet: Landmass = planets[Math.floor(Math.random() * planets.length)];
+
+    while (!placed) {
+
+        var pos = randomPlanet.getRandomPointOnBorder();
+
+        // make sure it's in view port
+        if (pos.point.x > 0 &&
+            pos.point.x < game.canvas.width &&
+            pos.point.y > 0 &&
+            pos.point.y < game.canvas.height) {
+
+            placed = true;
+
+            console.log("Placing tank", pos);
+
+            // place player on edge of landmass
+            tank.placeOn(randomPlanet, pos.point, pos.angle);
+        }
+    }
+};
+
 var playerTank = new PlayerTank(0, 0);
-var playerPos = landmass.getRandomPointOnBorder();
 
-console.log("Placing player", playerPos);
-
-// place player on edge of landmass
-playerTank.placeOn(landmass, playerPos.point, playerPos.angle);
+placeTank(playerTank);
 
 game.addChild(playerTank);
 
 // enemy tank
 var enemyTank = new Tank(0, 0, Colors.Enemy);
-var enemyPos = landmass2.getRandomPointOnBorder();
 
-console.log("Placing enemy", enemyPos);
-
-enemyTank.placeOn(landmass2, enemyPos.point, enemyPos.angle);
+placeTank(enemyTank);
 
 game.addChild(enemyTank);
 
@@ -58,7 +78,7 @@ game.addChild(enemyTank);
 var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
 powerIndicator.color = Colors.Player;
 powerIndicator.scale = 1.5;
-powerIndicator.addEventListener('update', () => {    
+powerIndicator.addEventListener('update', () => {
     powerIndicator.text = "Power: " + playerTank.firepower;
 });
 game.addChild(powerIndicator);
