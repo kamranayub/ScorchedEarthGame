@@ -1,3 +1,5 @@
+/// <reference path="Explosion.ts" />
+
 class Projectile extends Actor {
 
     startingAngle: number;
@@ -81,20 +83,16 @@ class Projectile extends Actor {
         return false;
     }
 
-    private onCollision(): void {
-
-        // loop through landmasses and destruct
-        this.engine.currentScene.children.forEach((actor: Actor) => {
-            if (actor instanceof Landmass) {
-                (<Landmass>actor).destruct(new Point(this.x, this.y), this.explodeRadius);
-            }
-        });
+    private onCollision(): void {        
 
         // play sound
         Resources.Projectiles.explodeSound.play();
 
         // play explosion animation
-        Resources.Projectiles.explosionAnim.play(this.x - (Resources.Projectiles.explosionDimensions / 2), this.y - (Resources.Projectiles.explosionDimensions / 2));
+        var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+
+        // add explosion to engine
+        this.engine.addChild(splosion);
 
         // remove myself
         this.engine.removeChild(this);

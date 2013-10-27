@@ -36,7 +36,9 @@ var Colors = {
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
     Land: Color.fromHex("#8c8c8c"),
-    Projectile: Color.fromHex("#ffffff")
+    Projectile: Color.fromHex("#ffffff"),
+    ExplosionBegin: Color.fromHex("#ddd32f"),
+    ExplosionEnd: Color.fromHex("#c12713")
 };
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -173,6 +175,53 @@ var Resources;
     })();
     Resources.Tanks = Tanks;
 })(Resources || (Resources = {}));
+var Explosion = (function (_super) {
+    __extends(Explosion, _super);
+    function Explosion(x, y, radius) {
+        _super.call(this, x, y, radius, radius, Colors.ExplosionBegin);
+        this.radius = radius;
+
+        this.expansionModifier = 200;
+        this._currentRadius = 0;
+        this._colorDiffR = Colors.ExplosionEnd.r - Colors.ExplosionBegin.r;
+        this._colorDiffG = Colors.ExplosionEnd.g - Colors.ExplosionBegin.g;
+        this._colorDiffB = Colors.ExplosionEnd.b - Colors.ExplosionBegin.b;
+    }
+    Explosion.prototype.update = function (engine, delta) {
+        var _this = this;
+        _super.prototype.update.call(this, engine, delta);
+
+        // adjust color based on current radius
+        var percRadius = this._currentRadius / this.radius;
+
+        this.color = new Color(Math.floor(Colors.ExplosionBegin.r + (this._colorDiffR * percRadius)), Math.floor(Colors.ExplosionBegin.g + (this._colorDiffG * percRadius)), Math.floor(Colors.ExplosionBegin.b + (this._colorDiffB * percRadius)));
+
+        if (this._currentRadius >= this.radius) {
+            // loop through landmasses and destruct
+            engine.currentScene.children.forEach(function (actor) {
+                if (actor instanceof Landmass) {
+                    (actor).destruct(new Point(_this.x, _this.y), _this.radius);
+                }
+            });
+
+            engine.removeChild(this);
+            return;
+        } else {
+            // mod current radius by duration
+            this._currentRadius += (this.expansionModifier / 1000) * delta;
+        }
+    };
+
+    Explosion.prototype.draw = function (ctx, delta) {
+        ctx.beginPath();
+        ctx.fillStyle = this.color.toString();
+        ctx.arc(this.x, this.y, this._currentRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+    };
+    return Explosion;
+})(Actor);
+/// <reference path="Explosion.ts" />
 var Projectile = (function (_super) {
     __extends(Projectile, _super);
     function Projectile(x, y, angle, power) {
@@ -240,19 +289,14 @@ var Projectile = (function (_super) {
     };
 
     Projectile.prototype.onCollision = function () {
-        var _this = this;
-        // loop through landmasses and destruct
-        this.engine.currentScene.children.forEach(function (actor) {
-            if (actor instanceof Landmass) {
-                (actor).destruct(new Point(_this.x, _this.y), _this.explodeRadius);
-            }
-        });
-
         // play sound
         Resources.Projectiles.explodeSound.play();
 
         // play explosion animation
-        Resources.Projectiles.explosionAnim.play(this.x - (Resources.Projectiles.explosionDimensions / 2), this.y - (Resources.Projectiles.explosionDimensions / 2));
+        var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+
+        // add explosion to engine
+        this.engine.addChild(splosion);
 
         // remove myself
         this.engine.removeChild(this);

@@ -51,6 +51,7 @@ var Colors = {
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
     Land: Color.fromHex("#8c8c8c"),
-    Projectile: Color.fromHex("#ffffff")
-
+    Projectile: Color.fromHex("#ffffff"),
+    ExplosionBegin: Color.fromHex("#ddd32f"),
+    ExplosionEnd: Color.fromHex("#c12713")
 };
