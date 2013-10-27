@@ -1,6 +1,8 @@
 ﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
+/// <reference path="Projectile.ts" />
+/// <reference path="CollisionActor.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -11,6 +13,7 @@ var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
         _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
+        this.health = 100;
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
@@ -66,7 +69,7 @@ var Tank = (function (_super) {
         this.barrelAngle += angle * delta / 1000;
     };
 
-    Tank.prototype.getBullet = function () {
+    Tank.prototype.getProjectile = function () {
         var centerX = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
         var centerY = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
 
@@ -75,10 +78,10 @@ var Tank = (function (_super) {
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
 
-        return new Bullet(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
     return Tank;
-})(Actor);
+})(CollisionActor);
 
 var PlayerTank = (function (_super) {
     __extends(PlayerTank, _super);
@@ -107,7 +110,7 @@ var PlayerTank = (function (_super) {
         } else if (engine.isKeyPressed(Keys.DOWN)) {
             this.decrementFirepower(delta);
         } else if (engine.isKeyUp(Keys.SPACE)) {
-            var bullet = this.getBullet();
+            var bullet = this.getProjectile();
 
             engine.addChild(bullet);
         }
@@ -154,81 +157,3 @@ var PlayerTank = (function (_super) {
     };
     return PlayerTank;
 })(Tank);
-
-var Bullet = (function (_super) {
-    __extends(Bullet, _super);
-    function Bullet(x, y, angle, power) {
-        _super.call(this, x, y, 2, 2, Colors.Bullet);
-
-        this.startingAngle = angle;
-        this.speed = power * Config.bulletSpeedModifier;
-
-        // starts at angle and moves in that direction at power
-        this.dx = this.speed * Math.cos(this.startingAngle);
-        this.dy = this.speed * Math.sin(this.startingAngle);
-    }
-    Bullet.prototype.update = function (engine, delta) {
-        _super.prototype.update.call(this, engine, delta);
-
-        var seconds = delta / 1000;
-
-        // TODO: This is pretty naive. We should use a collision map!
-        // There's a chance the projected pixel will actually be a color
-        // of what we can collide with when it may be some anti-aliasing
-        // or other color.
-        // check collision with tanks
-        // get projection ahead of where we are currently
-        var projectedPixel = new Point(2 + this.x + this.dx * seconds, 2 + this.y + this.dy * seconds);
-        var projectedPixelData = engine.ctx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
-
-        if (this.isColorOf(projectedPixelData, Colors.Enemy) || this.isColorOf(projectedPixelData, Colors.Land) || this.isColorOf(projectedPixelData, Colors.Player)) {
-            // collision!
-            this.onCollision();
-            return;
-        }
-
-        // store engine
-        this.engine = engine;
-
-        // gravity
-        var gravity = Config.gravity * seconds;
-
-        // pulled down by gravity
-        this.dy += gravity;
-
-        if (this.y > engine.canvas.height) {
-            engine.removeChild(this);
-        }
-    };
-
-    Bullet.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
-    };
-
-    /**
-    * Determines whether or not the given color is present
-    * in the given pixel array.
-    */
-    Bullet.prototype.isColorOf = function (pixels, color) {
-        for (var i = 0; i < pixels.length; i += 4) {
-            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
-                console.log("Collided with color", color);
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    Bullet.prototype.onCollision = function () {
-        // play sound
-        Resources.Bullets.explodeSound.play();
-
-        // play explosion animation
-        Resources.Bullets.explosionAnim.play(this.x - (Resources.Bullets.explosionDimensions / 2), this.y - (Resources.Bullets.explosionDimensions / 2));
-
-        // remove myself
-        this.engine.removeChild(this);
-    };
-    return Bullet;
-})(Actor);

@@ -147,6 +147,9 @@
     <Content Include="Scripts\Game\Excalibur.js" />
     <Content Include="Scripts\Game\GameConfig.ts" />
     <Content Include="Scripts\Game\Game.ts" />
+    <TypeScriptCompile Include="Scripts\Game\CollisionActor.ts" />
+    <TypeScriptCompile Include="Scripts\Game\MonkeyPatch.ts" />
+    <TypeScriptCompile Include="Scripts\Game\Projectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />
     <TypeScriptCompile Include="Scripts\Game\Landmass.ts" />
     <Content Include="Scripts\Game\Tank.ts" />

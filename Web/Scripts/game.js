@@ -20,7 +20,7 @@ var Config = {
     firepowerMin: 0,
     // Firepower acceleration
     firepowerAccel: 0.5,
-    // Bullet speed modifier
+    // Projectile speed modifier
     bulletSpeedModifier: 2,
     // Gravity constant
     gravity: 50,
@@ -33,16 +33,24 @@ var Colors = {
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
     Land: Color.fromHex("#8c8c8c"),
-    Bullet: Color.fromHex("#ffffff")
+    Projectile: Color.fromHex("#ffffff")
 };
-/// <reference path="Excalibur.d.ts" />
-/// <reference path="GameConfig.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var CollisionActor = (function (_super) {
+    __extends(CollisionActor, _super);
+    function CollisionActor(x, y, width, height, color) {
+        _super.call(this, x, y, width, height, color);
+    }
+    return CollisionActor;
+})(Actor);
+/// <reference path="Excalibur.d.ts" />
+/// <reference path="GameConfig.ts" />
+/// <reference path="CollisionActor.ts" />
 var Point = (function () {
     function Point(x, y) {
         this.x = Math.floor(x);
@@ -68,7 +76,6 @@ var Landmass = (function (_super) {
     };
 
     Landmass.prototype.draw = function (ctx, delta) {
-        //super.draw(ctx, delta);
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     };
 
@@ -105,28 +112,112 @@ var Landmass = (function (_super) {
         this.planetCtx.fill();
     };
     return Landmass;
-})(Actor);
+})(CollisionActor);
 var Resources;
 (function (Resources) {
-    var Bullets = (function () {
-        function Bullets(engine) {
-            Bullets.explosionSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5, Bullets.explosionDimensions, Bullets.explosionDimensions);
-            Bullets.explosionAnim = new Drawing.Animation(engine, Bullets.explosionSprite.sprites, 0.1);
+    var Projectiles = (function () {
+        function Projectiles(engine) {
+            Projectiles.explosionSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5, Projectiles.explosionDimensions, Projectiles.explosionDimensions);
+            Projectiles.explosionAnim = new Drawing.Animation(engine, Projectiles.explosionSprite.sprites, 0.1);
         }
-        Bullets.explosionDimensions = 130;
+        Projectiles.explosionDimensions = 130;
 
-        Bullets.explodeSound = new Media.Sound("/Sounds/splode.mp3");
-        return Bullets;
+        Projectiles.explodeSound = new Media.Sound("/Sounds/splode.mp3");
+        return Projectiles;
     })();
-    Resources.Bullets = Bullets;
+    Resources.Projectiles = Projectiles;
 })(Resources || (Resources = {}));
+var Projectile = (function (_super) {
+    __extends(Projectile, _super);
+    function Projectile(x, y, angle, power) {
+        _super.call(this, x, y, 2, 2, Colors.Projectile);
+
+        this.startingAngle = angle;
+        this.speed = power * Config.bulletSpeedModifier;
+
+        // starts at angle and moves in that direction at power
+        this.dx = this.speed * Math.cos(this.startingAngle);
+        this.dy = this.speed * Math.sin(this.startingAngle);
+    }
+    Projectile.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
+
+        var seconds = delta / 1000;
+
+        // TODO: This is pretty naive. We should use a collision map!
+        // There's a chance the projected pixel will actually be a color
+        // of what we can collide with when it may be some anti-aliasing
+        // or other color.
+        var collisionCtx = (window).collisionCtx;
+
+        // check collision with tanks
+        // get projection ahead of where we are currently
+        var projectedPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var projectedPixelData = collisionCtx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
+
+        console.log("Projected pixel colors", projectedPixelData);
+
+        if (!this.isColorOf(projectedPixelData, new Color(255, 255, 255, 255))) {
+            // collision!
+            this.onCollision();
+            return;
+        }
+
+        // store engine
+        this.engine = engine;
+
+        // gravity
+        var gravity = Config.gravity * seconds;
+
+        // pulled down by gravity
+        this.dy += gravity;
+
+        if (this.y > engine.canvas.height) {
+            engine.removeChild(this);
+        }
+    };
+
+    Projectile.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+    };
+
+    /**
+    * Determines whether or not the given color is present
+    * in the given pixel array.
+    */
+    Projectile.prototype.isColorOf = function (pixels, color) {
+        for (var i = 0; i < pixels.length; i += 4) {
+            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
+                console.log("Collided with color", color);
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    Projectile.prototype.onCollision = function () {
+        // play sound
+        Resources.Projectiles.explodeSound.play();
+
+        // play explosion animation
+        Resources.Projectiles.explosionAnim.play(this.x - (Resources.Projectiles.explosionDimensions / 2), this.y - (Resources.Projectiles.explosionDimensions / 2));
+
+        // remove myself
+        this.engine.removeChild(this);
+    };
+    return Projectile;
+})(Actor);
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
+/// <reference path="Projectile.ts" />
+/// <reference path="CollisionActor.ts" />
 var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
         _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
+        this.health = 100;
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
@@ -182,7 +273,7 @@ var Tank = (function (_super) {
         this.barrelAngle += angle * delta / 1000;
     };
 
-    Tank.prototype.getBullet = function () {
+    Tank.prototype.getProjectile = function () {
         var centerX = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
         var centerY = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
 
@@ -191,10 +282,10 @@ var Tank = (function (_super) {
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
 
-        return new Bullet(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
     return Tank;
-})(Actor);
+})(CollisionActor);
 
 var PlayerTank = (function (_super) {
     __extends(PlayerTank, _super);
@@ -223,7 +314,7 @@ var PlayerTank = (function (_super) {
         } else if (engine.isKeyPressed(Keys.DOWN)) {
             this.decrementFirepower(delta);
         } else if (engine.isKeyUp(Keys.SPACE)) {
-            var bullet = this.getBullet();
+            var bullet = this.getProjectile();
 
             engine.addChild(bullet);
         }
@@ -270,94 +361,64 @@ var PlayerTank = (function (_super) {
     };
     return PlayerTank;
 })(Tank);
+/// <reference path="Excalibur.d.ts" />
+var Patches;
+(function (Patches) {
+    function patchInCollisionMaps(game) {
+        var collisionCanvas = (window).collisionCanvas;
 
-var Bullet = (function (_super) {
-    __extends(Bullet, _super);
-    function Bullet(x, y, angle, power) {
-        _super.call(this, x, y, 2, 2, Colors.Bullet);
+        collisionCanvas.id = "collisionCanvas";
+        collisionCanvas.width = game.canvas.width;
+        collisionCanvas.height = game.canvas.height;
+        var collisionCtx = collisionCanvas.getContext('2d');
+        (window).collisionCtx = collisionCtx;
 
-        this.startingAngle = angle;
-        this.speed = power * Config.bulletSpeedModifier;
+        if (game.isDebug) {
+            document.body.appendChild(collisionCanvas);
+        }
 
-        // starts at angle and moves in that direction at power
-        this.dx = this.speed * Math.cos(this.startingAngle);
-        this.dy = this.speed * Math.sin(this.startingAngle);
+        var oldDraw = Engine.prototype["draw"];
+        Engine.prototype["draw"] = function (delta) {
+            var collisionCtx = ((window).collisionCtx);
+            collisionCtx.fillStyle = 'white';
+            collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+
+            oldDraw.apply(this, [delta]);
+        };
+
+        SceneNode.prototype.draw = function (ctx, delta) {
+            var collisionCtx = ((window).collisionCtx);
+
+            this.children.forEach(function (actor) {
+                actor.draw(ctx, delta);
+
+                if (actor instanceof CollisionActor) {
+                    var oldColor = actor.color;
+                    actor.color = new Color(0, 0, 0, 255);
+                    actor.draw(collisionCtx, delta);
+                    actor.color = oldColor;
+                }
+            });
+        };
     }
-    Bullet.prototype.update = function (engine, delta) {
-        _super.prototype.update.call(this, engine, delta);
-
-        var seconds = delta / 1000;
-
-        // TODO: This is pretty naive. We should use a collision map!
-        // There's a chance the projected pixel will actually be a color
-        // of what we can collide with when it may be some anti-aliasing
-        // or other color.
-        // check collision with tanks
-        // get projection ahead of where we are currently
-        var projectedPixel = new Point(2 + this.x + this.dx * seconds, 2 + this.y + this.dy * seconds);
-        var projectedPixelData = engine.ctx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;
-
-        if (this.isColorOf(projectedPixelData, Colors.Enemy) || this.isColorOf(projectedPixelData, Colors.Land) || this.isColorOf(projectedPixelData, Colors.Player)) {
-            // collision!
-            this.onCollision();
-            return;
-        }
-
-        // store engine
-        this.engine = engine;
-
-        // gravity
-        var gravity = Config.gravity * seconds;
-
-        // pulled down by gravity
-        this.dy += gravity;
-
-        if (this.y > engine.canvas.height) {
-            engine.removeChild(this);
-        }
-    };
-
-    Bullet.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
-    };
-
-    /**
-    * Determines whether or not the given color is present
-    * in the given pixel array.
-    */
-    Bullet.prototype.isColorOf = function (pixels, color) {
-        for (var i = 0; i < pixels.length; i += 4) {
-            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
-                console.log("Collided with color", color);
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    Bullet.prototype.onCollision = function () {
-        // play sound
-        Resources.Bullets.explodeSound.play();
-
-        // play explosion animation
-        Resources.Bullets.explosionAnim.play(this.x - (Resources.Bullets.explosionDimensions / 2), this.y - (Resources.Bullets.explosionDimensions / 2));
-
-        // remove myself
-        this.engine.removeChild(this);
-    };
-    return Bullet;
-})(Actor);
+    Patches.patchInCollisionMaps = patchInCollisionMaps;
+})(Patches || (Patches = {}));
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
 /// <reference path="Resources.ts" />
+/// <reference path="CollisionActor.ts" />
+/// <reference path="MonkeyPatch.ts" />
+var collisionCanvas = (window).collisionCanvas = document.createElement("canvas");
+
 var game = new Engine(null, null, 'game');
+
+Patches.patchInCollisionMaps(game);
 
 // game.isDebug = true;
 // Resources
-var bulletResources = new Resources.Bullets(game);
+var bulletResources = new Resources.Projectiles(game);
 
 // Set background color
 game.backgroundColor = Colors.Background;

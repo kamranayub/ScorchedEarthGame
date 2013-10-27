@@ -3,12 +3,19 @@
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
 /// <reference path="Resources.ts" />
+/// <reference path="CollisionActor.ts" />
+/// <reference path="MonkeyPatch.ts" />
+
+var collisionCanvas = (<any>window).collisionCanvas = document.createElement("canvas");
 
 var game = new Engine(null, null, 'game');
+
+Patches.patchInCollisionMaps(game);
+
 // game.isDebug = true;
 
 // Resources
-var bulletResources = new Resources.Bullets(game);
+var bulletResources = new Resources.Projectiles(game);
 
 // Set background color
 game.backgroundColor = Colors.Background;

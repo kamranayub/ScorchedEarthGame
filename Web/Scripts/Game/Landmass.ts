@@ -1,5 +1,6 @@
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="CollisionActor.ts" />
 
 class Point {
 
@@ -13,7 +14,7 @@ class Point {
     }
 }
 
-class Landmass extends Actor {
+class Landmass extends CollisionActor {
 
     // config
     config: any = {
@@ -44,8 +45,6 @@ class Landmass extends Actor {
     }
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
-        //super.draw(ctx, delta);
-
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
 

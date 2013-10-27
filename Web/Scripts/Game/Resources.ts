@@ -1,5 +1,6 @@
 module Resources {
-    export class Bullets {
+
+    export class Projectiles {
 
         public static explosionDimensions: number = 130;
 
@@ -10,9 +11,9 @@ module Resources {
         public static explodeSound: Media.ISound = new Media.Sound("/Sounds/splode.mp3");
 
         constructor(engine: Engine) {
-            Bullets.explosionSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5,
-                Bullets.explosionDimensions, Bullets.explosionDimensions);
-            Bullets.explosionAnim = new Drawing.Animation(engine, Bullets.explosionSprite.sprites, 0.1);
+            Projectiles.explosionSprite = new Drawing.SpriteSheet("/Spritesheets/spritesheet-explosion.png", 5, 5,
+                Projectiles.explosionDimensions, Projectiles.explosionDimensions);
+            Projectiles.explosionAnim = new Drawing.Animation(engine, Projectiles.explosionSprite.sprites, 0.1);
         }
     }    
 }

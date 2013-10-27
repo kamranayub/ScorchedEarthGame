@@ -32,7 +32,7 @@ var Config = {
     // Firepower acceleration
     firepowerAccel: 0.5,
 
-    // Bullet speed modifier
+    // Projectile speed modifier
     bulletSpeedModifier: 2,
 
     // Gravity constant
@@ -48,6 +48,6 @@ var Colors = {
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
     Land: Color.fromHex("#8c8c8c"),
-    Bullet: Color.fromHex("#ffffff")
+    Projectile: Color.fromHex("#ffffff")
 
 };

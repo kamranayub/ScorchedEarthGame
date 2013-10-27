@@ -1,8 +1,10 @@
 ﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
+/// <reference path="Projectile.ts" />
+/// <reference path="CollisionActor.ts" />
 
-class Tank extends Actor {
+class Tank extends CollisionActor {
 
     barrelAngle: number;
 
@@ -11,6 +13,8 @@ class Tank extends Actor {
     landmass: Landmass;
 
     angle: number;
+
+    health: number = 100;
 
     constructor(x?: number, y?: number, color?: Color) {
         super(x, y, Config.tankWidth, Config.tankHeight, color);        
@@ -78,7 +82,7 @@ class Tank extends Actor {
 
     }
 
-    public getBullet(): Bullet {
+    public getProjectile(): Projectile {
         var centerX: number = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
         var centerY: number = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
 
@@ -87,7 +91,7 @@ class Tank extends Actor {
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI/2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
 
-        return new Bullet(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+        return new Projectile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     }
 }
 
@@ -131,7 +135,7 @@ class PlayerTank extends Tank {
 
         } else if (engine.isKeyUp(Keys.SPACE)) {
 
-            var bullet = this.getBullet();
+            var bullet = this.getProjectile();
 
             engine.addChild(bullet);
         }
@@ -178,101 +182,4 @@ class PlayerTank extends Tank {
             this.shouldFirepowerAccel = false;            
         }
     }
-}
-
-class Bullet extends Actor {
-
-    startingAngle: number;
-
-    speed: number;
-
-    engine: Engine;  
-
-    constructor(x: number, y: number, angle: number, power: number) {
-        super(x, y, 2, 2, Colors.Bullet);
-
-        this.startingAngle = angle;
-        this.speed = power * Config.bulletSpeedModifier;
-
-        // starts at angle and moves in that direction at power        
-        this.dx = this.speed * Math.cos(this.startingAngle);
-        this.dy = this.speed * Math.sin(this.startingAngle);
-    }
-
-    public update(engine: Engine, delta: number): void {
-        super.update(engine, delta);
-
-        var seconds = delta / 1000;
-
-        // TODO: This is pretty naive. We should use a collision map!
-        // There's a chance the projected pixel will actually be a color
-        // of what we can collide with when it may be some anti-aliasing
-        // or other color.
-
-        // check collision with tanks
-        // get projection ahead of where we are currently
-        var projectedPixel = new Point(2 + this.x + this.dx * seconds, 2 + this.y + this.dy * seconds);
-        var projectedPixelData = engine.ctx.getImageData(projectedPixel.x, projectedPixel.y, 1, 1).data;        
-
-        // collide with planets, enemies, and ourselves
-        if (this.isColorOf(projectedPixelData, Colors.Enemy) ||
-            this.isColorOf(projectedPixelData, Colors.Land) ||
-            this.isColorOf(projectedPixelData, Colors.Player)) {
-
-            // collision!
-            this.onCollision();
-            return;
-        }
-
-        // store engine
-        this.engine = engine;        
-
-        // gravity
-        var gravity = Config.gravity * seconds;
-
-        // pulled down by gravity
-        this.dy += gravity;
-
-        // out of bounds
-        if (this.y > engine.canvas.height) {
-            engine.removeChild(this);
-        }        
-    }
-
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
-        super.draw(ctx, delta);
-    }
-
-    /**
-     * Determines whether or not the given color is present
-     * in the given pixel array.
-     */
-    private isColorOf(pixels: number[], color: Color): boolean {
-
-        // pixel = 4 sets of RGBA
-        for (var i = 0; i < pixels.length; i += 4) {            
-            if (pixels[i] === color.r &&
-                pixels[i + 1] === color.g &&
-                pixels[i + 2] === color.b &&
-                pixels[i + 3] === color.a) {
-                console.log("Collided with color", color);
-                return true;
-            }
-        }
-
-        return false;            
-    }
-
-    private onCollision(): void {
-
-        // play sound
-        Resources.Bullets.explodeSound.play();
-
-        // play explosion animation
-        Resources.Bullets.explosionAnim.play(this.x - (Resources.Bullets.explosionDimensions / 2), this.y - (Resources.Bullets.explosionDimensions / 2));                
-
-        // remove myself
-        this.engine.removeChild(this);
-    }
-
 }
