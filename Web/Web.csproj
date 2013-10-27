@@ -166,6 +166,7 @@
       <DependentUpon>Web.config</DependentUpon>
     </Content>
     <Content Include="Views\Web.config" />
+    <TypeScriptCompile Include="Scripts\Game\Projectiles\BigMissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Projectiles\MissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Resources.ts" />
   </ItemGroup>

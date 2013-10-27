@@ -24,13 +24,18 @@ var Config = {
     bulletSpeedModifier: 0.4,
     // Gravity constant
     gravity: 50,
+    // Minimum planet radius
+    planetMinRadius: 35,
+    // Maximum planet radius
+    planetMaxRadius: 200,
     // # of planets to generate
-    maxPlanets: 4,
+    maxPlanets: 8,
     // amount of distance from canvas edges to spawn planets
     planetGenerationPadding: 120
 };
 
 var Colors = {
+    Black: Color.fromHex("#000000"),
     White: Color.fromHex("#ffffff"),
     Background: Color.fromHex("#141414"),
     Player: Color.fromHex("#a73c3c"),
@@ -74,11 +79,6 @@ var Landmass = (function (_super) {
     __extends(Landmass, _super);
     function Landmass() {
         _super.call(this, 0, 0, null, null, Colors.Land);
-        // config
-        this.config = {
-            minRadius: 35,
-            maxRadius: 200
-        };
 
         this.generate();
     }
@@ -121,34 +121,40 @@ var Landmass = (function (_super) {
 
     Landmass.prototype.generate = function () {
         // get a random radius to use
-        this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
+        this.radius = Math.random() * (Config.planetMaxRadius - Config.planetMinRadius) + Config.planetMinRadius;
 
         this.setWidth(this.radius * 2);
         this.setHeight(this.radius * 2);
 
-        // create off-screen canvas
-        this.planetCanvas = document.createElement('canvas');
-        this.planetCollisionCanvas = document.createElement('canvas');
-        this.planetCanvas.width = this.radius * 2 + 2;
-        this.planetCanvas.height = this.radius * 2 + 2;
-        this.planetCollisionCanvas.width = this.radius * 2 + 2;
-        this.planetCollisionCanvas.height = this.radius * 2 + 2;
+        // create off-screen canvases
+        // draw = what we draw to and copy over to game canvas
+        // collision = what we draw to and use for collision checking
+        var draw = this.generateCanvas(this.color);
+        var collision = this.generateCanvas(Colors.Black);
 
-        this.planetCtx = this.planetCanvas.getContext('2d');
-        this.planetCollisionCtx = this.planetCollisionCanvas.getContext('2d');
+        this.planetCanvas = draw.canvas;
+        this.planetCtx = draw.ctx;
+        this.planetCollisionCanvas = collision.canvas;
+        this.planetCollisionCtx = collision.ctx;
+    };
+
+    Landmass.prototype.generateCanvas = function (color) {
+        var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+
+        canvas.width = this.radius * 2 + 2;
+        canvas.height = this.radius * 2 + 2;
 
         // draw arc
-        this.planetCtx.beginPath();
-        this.planetCtx.fillStyle = this.color.toString();
-        this.planetCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        this.planetCtx.closePath();
-        this.planetCtx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = color.toString();
+        ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
 
-        this.planetCollisionCtx.beginPath();
-        this.planetCollisionCtx.fillStyle = new Color(0, 0, 0, 255);
-        this.planetCollisionCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        this.planetCollisionCtx.closePath();
-        this.planetCollisionCtx.fill();
+        return {
+            canvas: canvas,
+            ctx: ctx
+        };
     };
     return Landmass;
 })(CollisionActor);
@@ -274,7 +280,6 @@ var Projectile = (function (_super) {
         // remove myself
         engine.removeChild(this);
     };
-    Projectile.explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
     return Projectile;
 })(Actor);
 var Projectiles;
@@ -291,7 +296,7 @@ var Projectiles;
             _super.prototype.onCollision.call(this, engine);
 
             // play sound
-            Projectile.explodeSound.play();
+            Missile._explodeSound.play();
 
             // play explosion animation
             var splosion = new Explosion(this.x, this.y, this.explodeRadius);
@@ -299,6 +304,7 @@ var Projectiles;
             // add explosion to engine
             engine.addChild(splosion);
         };
+        Missile._explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
         return Missile;
     })(Projectile);
     Projectiles.Missile = Missile;
@@ -534,9 +540,31 @@ var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding,
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
 
-    // place randomly in canvas space
-    _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
-    _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+    var placed = false;
+
+    while (!placed) {
+        _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+        _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+
+        var intersecting = false;
+
+        for (var j = 0; j < planets.length; j++) {
+            if (i === j)
+                continue;
+
+            // use some maths to figure out if this planet touches the other
+            var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+
+            if (_planet.radius + otherPlanet.radius > distance) {
+                intersecting = true;
+                break;
+            }
+        }
+
+        if (!intersecting) {
+            placed = true;
+        }
+    }
 }
 
 var placeTank = function (tank) {
@@ -547,7 +575,11 @@ var placeTank = function (tank) {
     while (!placed) {
         var pos = randomPlanet.getRandomPointOnBorder();
 
-        if (pos.point.x > 0 && pos.point.x < game.canvas.width && pos.point.y > 0 && pos.point.y < game.canvas.height) {
+        var isInViewport = function () {
+            return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
+        };
+
+        if (isInViewport()) {
             placed = true;
 
             console.log("Placing tank", pos);

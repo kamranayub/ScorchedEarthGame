@@ -2,8 +2,6 @@
 
 class Projectile extends Actor {
 
-    public static explodeSound: Media.ISound = new Media.Sound("/Sounds/Explosion-Small.wav")
-
     speed: number;
 
     constructor(x: number, y: number, width: number, height: number, color: Color, public angle: number, power: number, public explodeRadius: number) {

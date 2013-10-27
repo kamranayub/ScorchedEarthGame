@@ -38,15 +38,23 @@ var Config = {
     // Gravity constant
     gravity: 50,
 
+    // Minimum planet radius
+    planetMinRadius: 35,
+
+    // Maximum planet radius
+    planetMaxRadius: 200,
+
     // # of planets to generate
-    maxPlanets: 4,
+    maxPlanets: 8,
 
     // amount of distance from canvas edges to spawn planets
     planetGenerationPadding: 120
 };
 
 var Colors = {
+    Black: Color.fromHex("#000000"),
     White: Color.fromHex("#ffffff"),
+
     Background: Color.fromHex("#141414"),
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),

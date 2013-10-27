@@ -5,6 +5,8 @@ module Projectiles {
      */
     export class Missile extends Projectile {
 
+        private static _explodeSound: Media.ISound = new Media.Sound("/Sounds/Explosion-Small.wav")
+
         constructor(x: number, y: number, angle: number, power: number) {
             super(x, y, 2, 2, Colors.Projectile, angle, power, 10);
         }
@@ -13,7 +15,7 @@ module Projectiles {
             super.onCollision(engine);
 
             // play sound
-            Projectile.explodeSound.play();
+            Missile._explodeSound.play();
 
             // play explosion animation
             var splosion = new Explosion(this.x, this.y, this.explodeRadius);

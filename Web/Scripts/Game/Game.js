@@ -29,9 +29,31 @@ var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding,
 for (var i = 0; i < planets.length; i++) {
     _planet = planets[i];
 
-    // place randomly in canvas space
-    _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
-    _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+    var placed = false;
+
+    while (!placed) {
+        _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+        _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+
+        var intersecting = false;
+
+        for (var j = 0; j < planets.length; j++) {
+            if (i === j)
+                continue;
+
+            // use some maths to figure out if this planet touches the other
+            var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+
+            if (_planet.radius + otherPlanet.radius > distance) {
+                intersecting = true;
+                break;
+            }
+        }
+
+        if (!intersecting) {
+            placed = true;
+        }
+    }
 }
 
 var placeTank = function (tank) {
@@ -42,7 +64,11 @@ var placeTank = function (tank) {
     while (!placed) {
         var pos = randomPlanet.getRandomPointOnBorder();
 
-        if (pos.point.x > 0 && pos.point.x < game.canvas.width && pos.point.y > 0 && pos.point.y < game.canvas.height) {
+        var isInViewport = function () {
+            return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
+        };
+
+        if (isInViewport()) {
             placed = true;
 
             console.log("Placing tank", pos);

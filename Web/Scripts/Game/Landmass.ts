@@ -16,23 +16,13 @@ class Point {
 
 class Landmass extends CollisionActor {
 
-    // config
-    config: any = {
+    public radius: number;
 
-        minRadius: 35,
+    private planetCanvas: HTMLCanvasElement;
+    private planetCollisionCanvas: HTMLCanvasElement;
 
-        maxRadius: 200
-    };
-
-    // private vars
-
-    planetCanvas: HTMLCanvasElement;
-    planetCollisionCanvas: HTMLCanvasElement;
-
-    planetCtx: CanvasRenderingContext2D;
-    planetCollisionCtx: CanvasRenderingContext2D;
-
-    radius: number;
+    private planetCtx: CanvasRenderingContext2D;
+    private planetCollisionCtx: CanvasRenderingContext2D;
 
     constructor() {
         super(0, 0, null, null, Colors.Land);
@@ -84,35 +74,40 @@ class Landmass extends CollisionActor {
     private generate(): void {       
 
         // get a random radius to use
-        this.radius = Math.random() * (this.config.maxRadius - this.config.minRadius) + this.config.minRadius;
+        this.radius = Math.random() * (Config.planetMaxRadius - Config.planetMinRadius) + Config.planetMinRadius;
 
         this.setWidth(this.radius * 2);
         this.setHeight(this.radius * 2);
 
-        // create off-screen canvas
-        this.planetCanvas = document.createElement('canvas');
-        this.planetCollisionCanvas = document.createElement('canvas');
-        this.planetCanvas.width = this.radius * 2 + 2;
-        this.planetCanvas.height = this.radius * 2 + 2;
-        this.planetCollisionCanvas.width = this.radius * 2 + 2;
-        this.planetCollisionCanvas.height = this.radius * 2 + 2;
+        // create off-screen canvases
+        // draw = what we draw to and copy over to game canvas
+        // collision = what we draw to and use for collision checking
+        var draw = this.generateCanvas(this.color);
+        var collision = this.generateCanvas(Colors.Black);
 
-        this.planetCtx = this.planetCanvas.getContext('2d');    
-        this.planetCollisionCtx = this.planetCollisionCanvas.getContext('2d');
-
-        // draw arc
-        this.planetCtx.beginPath();
-        this.planetCtx.fillStyle = this.color.toString();
-        this.planetCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        this.planetCtx.closePath();
-        this.planetCtx.fill();
-
-        this.planetCollisionCtx.beginPath();
-        this.planetCollisionCtx.fillStyle = new Color(0, 0, 0, 255);
-        this.planetCollisionCtx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        this.planetCollisionCtx.closePath();
-        this.planetCollisionCtx.fill();
+        this.planetCanvas = draw.canvas;
+        this.planetCtx = draw.ctx;    
+        this.planetCollisionCanvas = collision.canvas;
+        this.planetCollisionCtx = collision.ctx;
     }
 
+    private generateCanvas(color: Color) {
+        var canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d');
 
+        canvas.width = this.radius * 2 + 2;
+        canvas.height = this.radius * 2 + 2;
+
+        // draw arc
+        ctx.beginPath();
+        ctx.fillStyle = color.toString();
+        ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        return {
+            canvas: canvas,
+            ctx: ctx
+        };
+    }
 }
