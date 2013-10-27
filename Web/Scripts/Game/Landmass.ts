@@ -38,6 +38,9 @@ class Landmass extends CollisionActor {
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
+
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x + this.radius, this.y + this.radius, 2, 2);
     }
 
     public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number) {
@@ -69,6 +72,44 @@ class Landmass extends CollisionActor {
         this.planetCollisionCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
         this.planetCollisionCtx.closePath();
         this.planetCollisionCtx.fill();
+    }
+
+    xa: number = 0;
+    ya: number = 0.6;
+
+    xf: number = 0.8;
+    yf: number = 0.7;
+
+    public actOn(actor: Actor, delta: number): void {
+
+        var G = Config.gravity;
+        var x = this.x + this.radius;
+        var y = this.y + this.radius;
+
+        var xdiff = actor.x - x;
+        var ydiff = actor.y - y;
+        var dSquared = (xdiff * xdiff) + (ydiff * ydiff);
+        var d = Math.sqrt(dSquared);
+        var a = -G * ((1 * this.radius) / dSquared); // f = ma, f = 1 * a, f = a
+        if (a > 10) a = 10; // max accel clamp
+        var xa = a * ((xdiff) / d); // cos theta = adjacent / hypotenuse
+        var ya = a * ((ydiff) / d); // sin theta = opposite / hypotenuse
+
+        actor.dx += xa;
+        actor.dy += ya;
+
+        //actor.dx *= this.xf;
+        //actor.dy *= this.yf;
+
+        if (Math.abs(actor.dx) > 30) {
+            actor.dx *= 0.9;
+        }
+        if (Math.abs(actor.dy) > 30) {
+            actor.dy *= 0.9;
+        }
+
+        actor.x += actor.dx;
+        actor.y += actor.dy;
     }
 
     private generate(): void {       

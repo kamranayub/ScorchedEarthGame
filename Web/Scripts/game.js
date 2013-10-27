@@ -21,9 +21,9 @@ var Config = {
     // Firepower acceleration
     firepowerAccel: 0.5,
     // Projectile speed modifier
-    bulletSpeedModifier: 0.4,
+    bulletSpeedModifier: 0.003,
     // Gravity constant
-    gravity: 50,
+    gravity: 6,
     // Minimum planet radius
     planetMinRadius: 35,
     // Maximum planet radius
@@ -79,6 +79,10 @@ var Landmass = (function (_super) {
     __extends(Landmass, _super);
     function Landmass() {
         _super.call(this, 0, 0, null, null, Colors.Land);
+        this.xa = 0;
+        this.ya = 0.6;
+        this.xf = 0.8;
+        this.yf = 0.7;
 
         this.generate();
     }
@@ -88,6 +92,9 @@ var Landmass = (function (_super) {
 
     Landmass.prototype.draw = function (ctx, delta) {
         ctx.drawImage(this.planetCanvas, this.x, this.y);
+
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x + this.radius, this.y + this.radius, 2, 2);
     };
 
     Landmass.prototype.drawCollisionMap = function (ctx, delta) {
@@ -117,6 +124,35 @@ var Landmass = (function (_super) {
         this.planetCollisionCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
         this.planetCollisionCtx.closePath();
         this.planetCollisionCtx.fill();
+    };
+
+    Landmass.prototype.actOn = function (actor, delta) {
+        var G = Config.gravity;
+        var x = this.x + this.radius;
+        var y = this.y + this.radius;
+
+        var xdiff = actor.x - x;
+        var ydiff = actor.y - y;
+        var dSquared = (xdiff * xdiff) + (ydiff * ydiff);
+        var d = Math.sqrt(dSquared);
+        var a = -G * ((1 * this.radius) / dSquared);
+        if (a > 10)
+            a = 10;
+        var xa = a * ((xdiff) / d);
+        var ya = a * ((ydiff) / d);
+
+        actor.dx += xa;
+        actor.dy += ya;
+
+        if (Math.abs(actor.dx) > 30) {
+            actor.dx *= 0.9;
+        }
+        if (Math.abs(actor.dy) > 30) {
+            actor.dy *= 0.9;
+        }
+
+        actor.x += actor.dx;
+        actor.y += actor.dy;
     };
 
     Landmass.prototype.generate = function () {
@@ -222,6 +258,7 @@ var Projectile = (function (_super) {
         _super.call(this, x, y, width, height, color);
         this.angle = angle;
         this.explodeRadius = explodeRadius;
+        this._t = 0;
 
         // set speed
         this.speed = power * Config.bulletSpeedModifier;
@@ -231,17 +268,16 @@ var Projectile = (function (_super) {
         this.dy = this.speed * Math.sin(angle);
     }
     Projectile.prototype.update = function (engine, delta) {
-        _super.prototype.update.call(this, engine, delta);
+        var _this = this;
+        // super.update(engine, delta);
+        // act on this projectile from all planets
+        engine.currentScene.children.forEach(function (actor) {
+            if (actor instanceof Landmass) {
+                (actor).actOn(_this, delta);
+            }
+        });
 
-        var seconds = delta / 1000;
-
-        // gravity
-        var gravity = Config.gravity * seconds;
-
-        // pulled down by gravity
-        this.dy += gravity;
-
-        if (this.y > engine.canvas.height) {
+        if (this.y > engine.canvas.height || this.y < 0 || this.x > engine.canvas.width || this.x < 0) {
             engine.removeChild(this);
             return;
         }

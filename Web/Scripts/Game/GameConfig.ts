@@ -33,10 +33,10 @@ var Config = {
     firepowerAccel: 0.5,
 
     // Projectile speed modifier
-    bulletSpeedModifier: 0.4,
+    bulletSpeedModifier: 0.003,
 
     // Gravity constant
-    gravity: 50,
+    gravity: 6,
 
     // Minimum planet radius
     planetMinRadius: 35,

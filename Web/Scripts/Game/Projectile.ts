@@ -15,19 +15,23 @@ class Projectile extends Actor {
         this.dy = this.speed * Math.sin(angle);
     }
 
+    private _t = 0;
+
     public update(engine: Engine, delta: number): void {
-        super.update(engine, delta);
+        // super.update(engine, delta);
 
-        var seconds = delta / 1000;        
-
-        // gravity
-        var gravity = Config.gravity * seconds;
-
-        // pulled down by gravity
-        this.dy += gravity;
+        // act on this projectile from all planets
+        engine.currentScene.children.forEach((actor) => {
+            if (actor instanceof Landmass) {
+                (<Landmass>actor).actOn(this, delta);
+            }
+        });            
 
         // out of bounds
-        if (this.y > engine.canvas.height) {
+        if (this.y > engine.canvas.height ||
+            this.y < 0 ||
+            this.x > engine.canvas.width ||
+            this.x < 0) {
             engine.removeChild(this);
             return;
         }
