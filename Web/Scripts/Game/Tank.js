@@ -4,6 +4,7 @@
 /// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="Projectiles/MissileProjectile.ts" />
+/// <reference path="Projectiles/BigMissileProjectile.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -51,9 +52,6 @@ var Tank = (function (_super) {
         this.angle = angle;
         this.x = point.x;
         this.y = point.y;
-
-        console.log("Rotating player", (this.angle * 180) / Math.PI, "degrees");
-        console.log("Planet border pos", this.x, this.y);
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
@@ -79,8 +77,6 @@ var Tank = (function (_super) {
     Tank.prototype.getProjectile = function () {
         var centerX = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
         var centerY = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
-
-        console.log("Barrel Center", centerX, centerY, this.angle);
 
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;

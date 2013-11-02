@@ -1,5 +1,6 @@
 ﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
 /// <reference path="Resources.ts" />
@@ -10,7 +11,7 @@ var game = new Engine(null, null, 'game');
 
 Patches.patchInCollisionMaps(game);
 
-// game.isDebug = true;
+//game.isDebug = true;
 
 // Resources
 new Resources.Tanks();
@@ -18,11 +19,15 @@ new Resources.Tanks();
 // Set background color
 game.backgroundColor = Colors.Background;
 
+// create starfield
+var starfield = new Starfield(game.canvas.width, game.canvas.height);
+game.addChild(starfield);
+
 // create map
 var planets: Landmass[] = [];
 for (var i = 0; i < Config.maxPlanets; i++) {
     planets.push(new Landmass());
-    game.addChild(planets[i])
+    game.addChild(planets[i]);
 }
 
 // position planets

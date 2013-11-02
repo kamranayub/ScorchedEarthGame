@@ -32,8 +32,6 @@ class Landmass extends CollisionActor {
 
     public update(engine: Engine, delta: number) {
         super.update(engine, delta);
-
-
     }
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {

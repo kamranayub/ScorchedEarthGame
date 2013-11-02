@@ -169,6 +169,7 @@
     <TypeScriptCompile Include="Scripts\Game\Projectiles\BigMissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Projectiles\MissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Resources.ts" />
+    <TypeScriptCompile Include="Scripts\Game\Starfield.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -8,7 +8,7 @@ module Projectiles {
         private static _explodeSound: Media.ISound = new Media.Sound("/Sounds/Explosion-Small.wav")
 
         constructor(x: number, y: number, angle: number, power: number) {
-            super(x, y, 2, 2, Colors.Projectile, angle, power, 40);
+            super(x, y, 4, 4, Colors.Projectile, angle, power, 40);
         }
 
         public onCollision(engine: Engine): void {

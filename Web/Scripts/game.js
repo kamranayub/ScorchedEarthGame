@@ -51,6 +51,47 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var Starfield = (function (_super) {
+    __extends(Starfield, _super);
+    function Starfield(width, height) {
+        _super.call(this, 0, 0, width, height);
+
+        Logger.getInstance().log("Creating starfield, " + width + "x" + height);
+
+        var x, y, a, s, dx1 = -(Math.random() * 5), dx2 = -(Math.random() * 5);
+
+        for (var i = 0; i < 1000; i++) {
+            x = Math.floor(Math.random() * width);
+            y = Math.floor(Math.random() * height);
+            a = Math.random();
+            s = new Actor(x, y, 1, 1, new Color(255, 255, 255, a));
+            s.dx = Math.floor(Math.random() * 2) === 1 ? dx1 : dx2;
+
+            s.addEventListener('update', this.starOnUpdate(this, s));
+
+            this.addChild(s);
+        }
+
+        this.solid = true;
+        this.invisible = true;
+    }
+    Starfield.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+    };
+
+    Starfield.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
+    };
+
+    Starfield.prototype.starOnUpdate = function (field, star) {
+        return function (e) {
+            if (star.x < 0) {
+                star.x = field.getWidth();
+            }
+        };
+    };
+    return Starfield;
+})(Actor);
 var CollisionActor = (function (_super) {
     __extends(CollisionActor, _super);
     function CollisionActor(x, y, width, height, color) {
@@ -342,12 +383,40 @@ var Projectiles;
     })(Projectile);
     Projectiles.Missile = Missile;
 })(Projectiles || (Projectiles = {}));
+var Projectiles;
+(function (Projectiles) {
+    /**
+    * Big missile projectile
+    */
+    var BigMissile = (function (_super) {
+        __extends(BigMissile, _super);
+        function BigMissile(x, y, angle, power) {
+            _super.call(this, x, y, 4, 4, Colors.Projectile, angle, power, 40);
+        }
+        BigMissile.prototype.onCollision = function (engine) {
+            _super.prototype.onCollision.call(this, engine);
+
+            // play sound
+            BigMissile._explodeSound.play();
+
+            // play explosion animation
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+
+            // add explosion to engine
+            engine.addChild(splosion);
+        };
+        BigMissile._explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
+        return BigMissile;
+    })(Projectile);
+    Projectiles.BigMissile = BigMissile;
+})(Projectiles || (Projectiles = {}));
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="Projectiles/MissileProjectile.ts" />
+/// <reference path="Projectiles/BigMissileProjectile.ts" />
 var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
@@ -389,9 +458,6 @@ var Tank = (function (_super) {
         this.angle = angle;
         this.x = point.x;
         this.y = point.y;
-
-        console.log("Rotating player", (this.angle * 180) / Math.PI, "degrees");
-        console.log("Planet border pos", this.x, this.y);
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
@@ -417,8 +483,6 @@ var Tank = (function (_super) {
     Tank.prototype.getProjectile = function () {
         var centerX = this.x + (this.getHeight() / 2) * Math.cos(this.angle);
         var centerY = this.y + (this.getHeight() / 2) * Math.sin(this.angle);
-
-        console.log("Barrel Center", centerX, centerY, this.angle);
 
         var barrelX = Config.barrelHeight * Math.cos(this.barrelAngle + this.angle + (Math.PI / 2)) + centerX;
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
@@ -544,6 +608,7 @@ var Patches;
 })(Patches || (Patches = {}));
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
 /// <reference path="Resources.ts" />
@@ -553,12 +618,16 @@ var game = new Engine(null, null, 'game');
 
 Patches.patchInCollisionMaps(game);
 
-// game.isDebug = true;
+//game.isDebug = true;
 // Resources
 new Resources.Tanks();
 
 // Set background color
 game.backgroundColor = Colors.Background;
+
+// create starfield
+var starfield = new Starfield(game.canvas.width, game.canvas.height);
+game.addChild(starfield);
 
 // create map
 var planets = [];
