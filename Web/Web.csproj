@@ -149,6 +149,7 @@
     <Content Include="Scripts\Game\Game.ts" />
     <TypeScriptCompile Include="Scripts\Game\CollisionActor.ts" />
     <TypeScriptCompile Include="Scripts\Game\Explosion.ts" />
+    <TypeScriptCompile Include="Scripts\Game\Healthbar.ts" />
     <TypeScriptCompile Include="Scripts\Game\MonkeyPatch.ts" />
     <TypeScriptCompile Include="Scripts\Game\Projectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />
@@ -157,7 +158,7 @@
     <Content Include="Sounds\Explosion-Small.wav" />
     <Content Include="Sounds\Fire.wav" />
     <Content Include="Sounds\MoveBarrel.wav" />
-    <Content Include="Spritesheets\spritesheet-explosion.png" />
+    <Content Include="Spritesheets\SpriteFont.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>

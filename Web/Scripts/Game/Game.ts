@@ -13,9 +13,6 @@ Patches.patchInCollisionMaps(game);
 
 //game.isDebug = true;
 
-// Resources
-new Resources.Tanks();
-
 // Set background color
 game.backgroundColor = Colors.Background;
 

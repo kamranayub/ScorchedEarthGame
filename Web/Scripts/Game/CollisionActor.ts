@@ -11,7 +11,7 @@ class CollisionActor extends Actor implements ICollidable {
 
     public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number): void {
         var oldColor = this.color;
-        this.color = new Color(0, 0, 0, 255);
+        this.color = new Color(0, 0, 0, 1);
         this.draw(ctx, delta);
         this.color = oldColor;
     }

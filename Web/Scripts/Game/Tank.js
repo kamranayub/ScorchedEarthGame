@@ -2,6 +2,7 @@
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
+/// <reference path="Healthbar.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="Projectiles/MissileProjectile.ts" />
 /// <reference path="Projectiles/BigMissileProjectile.ts" />
@@ -15,13 +16,28 @@ var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
         _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
-        this.health = 100;
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
+        this.invisible = true;
+        this.healthbar = new Healthbar(100);
     }
     Tank.prototype.draw = function (ctx, delta) {
-        ctx.fillStyle = this.color.toString();
+        this.drawInternal(ctx, delta, false);
+    };
+
+    Tank.prototype.drawCollisionMap = function (ctx, delta) {
+        this.drawInternal(ctx, delta, true);
+    };
+
+    /**
+    * Internal draw
+    * @param ctx Canvas to draw on
+    * @param delta Delta for time-based movement
+    * @param collision Whether or not we're in a collision context
+    */
+    Tank.prototype.drawInternal = function (ctx, delta, collision) {
+        ctx.fillStyle = collision ? Colors.Black.toString() : this.color.toString();
 
         ctx.save();
         ctx.translate(this.landmass.x + this.landmass.radius, this.landmass.y + this.landmass.radius);
@@ -30,19 +46,33 @@ var Tank = (function (_super) {
         ctx.rotate(this.angle + (Math.PI / 2));
         ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
 
-        // get center
-        var centerX = 0;
-        var centerY = -this.landmass.radius - this.getHeight() / 2;
+        if (!collision) {
+            // get center
+            var centerX = 0;
+            var centerY = -this.landmass.radius - this.getHeight() / 2;
 
-        // draw barrel
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.barrelAngle);
-        ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
-        ctx.restore();
+            // translate coord system to center of tank
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // draw healthbar
+            this.healthbar.x = -(this.getWidth() / 2);
+            this.healthbar.y = -30;
+            this.healthbar.rotation = this.angle + (Math.PI / 2);
+            this.healthbar.draw(ctx, delta);
+
+            // draw barrel
+            ctx.fillStyle = this.color.toString();
+            ctx.rotate(this.barrelAngle);
+            ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
+            ctx.restore();
+        }
 
         // draw on landmass/scale/rotate
         ctx.restore();
+
+        // super
+        _super.prototype.draw.call(this, ctx, delta);
     };
 
     Tank.prototype.placeOn = function (landmass, point, angle) {

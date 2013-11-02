@@ -99,7 +99,7 @@ var CollisionActor = (function (_super) {
     }
     CollisionActor.prototype.drawCollisionMap = function (ctx, delta) {
         var oldColor = this.color;
-        this.color = new Color(0, 0, 0, 255);
+        this.color = new Color(0, 0, 0, 1);
         this.draw(ctx, delta);
         this.color = oldColor;
     };
@@ -234,6 +234,14 @@ var Landmass = (function (_super) {
 })(CollisionActor);
 var Resources;
 (function (Resources) {
+    var Global = (function () {
+        function Global() {
+        }
+        Global.sprintFont = new Drawing.SpriteFont("/Spritesheets/SpriteFont.png", '0123456789abcdefghijklmnopqrstuvwxyz,!\'&."?- ', true, 16, 3, 16, 16);
+        return Global;
+    })();
+    Resources.Global = Global;
+
     var Tanks = (function () {
         function Tanks() {
         }
@@ -356,6 +364,48 @@ var Projectile = (function (_super) {
     };
     return Projectile;
 })(Actor);
+var Healthbar = (function (_super) {
+    __extends(Healthbar, _super);
+    function Healthbar(max) {
+        _super.call(this, 0, 0, Config.tankWidth, 5, Color.Green);
+        this.max = max;
+
+        this.invisible = true;
+        this.current = max;
+    }
+    Healthbar.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+
+        var startAngle = Math.PI + (Math.PI / 8);
+        var endAngle = Math.PI * 2 - (Math.PI / 8);
+        var diffAngle = endAngle - startAngle;
+
+        // background
+        ctx.strokeStyle = new Color(255, 255, 255, 0.8);
+        ctx.beginPath();
+        ctx.arc(this.x + this.getWidth() / 2, this.y, 25, startAngle, endAngle);
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.closePath();
+
+        // arc
+        ctx.strokeStyle = this.color.toString();
+        ctx.beginPath();
+        ctx.arc(this.x + this.getWidth() / 2, this.y, 25, startAngle, endAngle - (diffAngle * (1 - this.getPercentage())));
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.closePath();
+    };
+
+    Healthbar.prototype.getPercentage = function () {
+        return this.current / this.max;
+    };
+
+    Healthbar.prototype.setValue = function (value) {
+        this.current = value;
+    };
+    return Healthbar;
+})(Actor);
 var Projectiles;
 (function (Projectiles) {
     /**
@@ -414,6 +464,7 @@ var Projectiles;
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
+/// <reference path="Healthbar.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="Projectiles/MissileProjectile.ts" />
 /// <reference path="Projectiles/BigMissileProjectile.ts" />
@@ -421,13 +472,28 @@ var Tank = (function (_super) {
     __extends(Tank, _super);
     function Tank(x, y, color) {
         _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
-        this.health = 100;
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
+        this.invisible = true;
+        this.healthbar = new Healthbar(100);
     }
     Tank.prototype.draw = function (ctx, delta) {
-        ctx.fillStyle = this.color.toString();
+        this.drawInternal(ctx, delta, false);
+    };
+
+    Tank.prototype.drawCollisionMap = function (ctx, delta) {
+        this.drawInternal(ctx, delta, true);
+    };
+
+    /**
+    * Internal draw
+    * @param ctx Canvas to draw on
+    * @param delta Delta for time-based movement
+    * @param collision Whether or not we're in a collision context
+    */
+    Tank.prototype.drawInternal = function (ctx, delta, collision) {
+        ctx.fillStyle = collision ? Colors.Black.toString() : this.color.toString();
 
         ctx.save();
         ctx.translate(this.landmass.x + this.landmass.radius, this.landmass.y + this.landmass.radius);
@@ -436,19 +502,33 @@ var Tank = (function (_super) {
         ctx.rotate(this.angle + (Math.PI / 2));
         ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
 
-        // get center
-        var centerX = 0;
-        var centerY = -this.landmass.radius - this.getHeight() / 2;
+        if (!collision) {
+            // get center
+            var centerX = 0;
+            var centerY = -this.landmass.radius - this.getHeight() / 2;
 
-        // draw barrel
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.barrelAngle);
-        ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
-        ctx.restore();
+            // translate coord system to center of tank
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // draw healthbar
+            this.healthbar.x = -(this.getWidth() / 2);
+            this.healthbar.y = -30;
+            this.healthbar.rotation = this.angle + (Math.PI / 2);
+            this.healthbar.draw(ctx, delta);
+
+            // draw barrel
+            ctx.fillStyle = this.color.toString();
+            ctx.rotate(this.barrelAngle);
+            ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
+            ctx.restore();
+        }
 
         // draw on landmass/scale/rotate
         ctx.restore();
+
+        // super
+        _super.prototype.draw.call(this, ctx, delta);
     };
 
     Tank.prototype.placeOn = function (landmass, point, angle) {
@@ -619,9 +699,6 @@ var game = new Engine(null, null, 'game');
 Patches.patchInCollisionMaps(game);
 
 //game.isDebug = true;
-// Resources
-new Resources.Tanks();
-
 // Set background color
 game.backgroundColor = Colors.Background;
 

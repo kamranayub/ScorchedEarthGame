@@ -2,6 +2,7 @@
 /// <reference path="GameConfig.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
+/// <reference path="Healthbar.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="Projectiles/MissileProjectile.ts" />
 /// <reference path="Projectiles/BigMissileProjectile.ts" />
@@ -16,40 +17,70 @@ class Tank extends CollisionActor {
 
     angle: number;
 
-    health: number = 100;
+    healthbar: Healthbar;
 
     constructor(x?: number, y?: number, color?: Color) {
         super(x, y, Config.tankWidth, Config.tankHeight, color);        
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
+        this.invisible = true;
+        this.healthbar = new Healthbar(100);
     }
 
-    public draw(ctx: CanvasRenderingContext2D, delta: number): void {        
+    public draw(ctx: CanvasRenderingContext2D, delta: number): void {
+        this.drawInternal(ctx, delta, false);        
+    }
 
-        ctx.fillStyle = this.color.toString();
+    public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number): void {
+        this.drawInternal(ctx, delta, true);
+    }
+
+    /**
+     * Internal draw
+     * @param ctx Canvas to draw on
+     * @param delta Delta for time-based movement
+     * @param collision Whether or not we're in a collision context
+     */
+    private drawInternal(ctx: CanvasRenderingContext2D, delta: number, collision: boolean): void {
+        ctx.fillStyle = collision
+            ? Colors.Black.toString()
+            : this.color.toString();
 
         ctx.save();
         ctx.translate(this.landmass.x + this.landmass.radius, this.landmass.y + this.landmass.radius);
 
         // account for phase shifting with canvas
-        ctx.rotate(this.angle + (Math.PI / 2));         
-        ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());
-                
-        // get center
-        var centerX: number = 0;
-        var centerY: number = -this.landmass.radius - this.getHeight() / 2;
+        ctx.rotate(this.angle + (Math.PI / 2));
+        ctx.fillRect(-this.getWidth() / 2, -this.landmass.radius - this.getHeight(), this.getWidth(), this.getHeight());                     
 
-        // draw barrel
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(this.barrelAngle);
-        ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
-        ctx.restore();
+        if (!collision) {
+            // get center
+            var centerX: number = 0;
+            var centerY: number = -this.landmass.radius - this.getHeight() / 2;
+
+            // translate coord system to center of tank
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // draw healthbar
+            this.healthbar.x = -(this.getWidth() / 2);
+            this.healthbar.y = -30;
+            this.healthbar.rotation = this.angle + (Math.PI / 2);
+            this.healthbar.draw(ctx, delta);
+            
+            // draw barrel       
+            ctx.fillStyle = this.color.toString(); 
+            ctx.rotate(this.barrelAngle);
+            ctx.fillRect(0, -(Config.barrelWidth / 2), Config.barrelHeight, Config.barrelWidth);
+            ctx.restore();
+        }
 
         // draw on landmass/scale/rotate
-
         ctx.restore();
+
+        // super
+        super.draw(ctx, delta);
     }
 
     public placeOn(landmass: Landmass, point: Point, angle: number): void {
