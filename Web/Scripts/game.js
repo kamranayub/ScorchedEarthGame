@@ -183,8 +183,6 @@ var Landmass = (function (_super) {
         // set border to filled border
         this.border = filledBorder;
 
-        console.log("Filling terrain border", filledBorder);
-
         for (var col = 0; col < this.ctxWidth; col++) {
             for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
                 // offset row because it starts at origin (0) and we need
