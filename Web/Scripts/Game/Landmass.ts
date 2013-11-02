@@ -1,5 +1,6 @@
-/// <reference path="Engine.d.ts" />
+/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="CollisionActor.ts" />
 
 class Point {
 
@@ -13,29 +14,19 @@ class Point {
     }
 }
 
-class Landmass extends Actor {
+class Landmass extends CollisionActor {
 
-    // config
-    config: any = {
+    public radius: number;
 
-        // Number of points resolved between edge points
-        // to generate terrain
-        terrainResolution: 3
+    private planetCanvas: HTMLCanvasElement;
+    private planetCollisionCanvas: HTMLCanvasElement;
 
-    };
+    private planetCtx: CanvasRenderingContext2D;
+    private planetCollisionCtx: CanvasRenderingContext2D;
 
-    // private vars
-
-    pixelBuffer: number[];
-
-    border: Point[] = [];
-
-    constructor(public ctxWidth: number, public ctxHeight: number) {
+    constructor() {
         super(0, 0, null, null, Colors.Land);
-
-        this.pixelBuffer = new Array<number>(ctxWidth * ctxHeight);
-        this.ctxHeight = ctxHeight;
-        this.ctxWidth = ctxWidth;
+            
         this.generate();
     }
 
@@ -46,148 +37,115 @@ class Landmass extends Actor {
     }
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
-        super.draw(ctx, delta);
-
-        // Fill in the landmass
-        // Source: https://hacks.mozilla.org/2011/12/faster-canvas-pixel-manipulation-with-typed-arrays/
-        // TODO Endian-ness
-        var imageData = ctx.getImageData(0, 0, this.ctxWidth, this.ctxHeight);
-        var iData = imageData.data;
-        var buf = new ArrayBuffer(iData.length);
-        var buf8 = new (<any>window).Uint8ClampedArray(buf);
-        var data = new Uint32Array(buf);
-        var _pb, _index;
-
-        for (var col = 0; col < this.ctxWidth; col++) {
-            for (var row = 0; row < this.ctxHeight; row++) {
-                _pb = this.pixelBuffer[col + row * this.ctxWidth];
-                _index = (row * this.ctxWidth + col) * 4;
-
-                if (_pb) {
-                    data[row * this.ctxWidth + col] =
-                        (255 << 24) | // alpha
-                        (Colors.Land.b << 16) | // blue
-                        (Colors.Land.g << 8) | // green
-                        (Colors.Land.r); // red
-                } else {
-                    var r = iData[_index],
-                        g = iData[++_index],
-                        b = iData[++_index],
-                        a = iData[++_index];
-
-                    data[row * this.ctxWidth + col] =
-                        (a << 24) | // alpha
-                        (b << 16) | // blue
-                        (g << 8) | // green
-                        (r); // red
-                    
-                }
-            }
-        }
-
-        iData["set"](buf8);
-
-        ctx.putImageData(imageData, 0, 0);
+        ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
 
-    public getRandomPointOnBorder(): Point {
-
-        return this.border[Math.floor(Math.random() * this.ctxWidth)];
-
+    public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number) {
+        ctx.drawImage(this.planetCollisionCanvas, this.x, this.y);
     }
 
-    private generate(): void {
+    public getRandomPointOnBorder() {
 
-        // land goes to bottom of screen (for now)
-        var lowerBounds: number = 300;
-        var upperBounds: number = Math.random() * (this.ctxHeight - 330) + 330;
+        var randomAngle = Math.random() * Math.PI * 2;        
+        var randomX = this.radius * Math.cos(randomAngle);
+        var randomY = this.radius * Math.sin(randomAngle);
 
-        var leftY: number = Math.random() * (upperBounds - lowerBounds) + lowerBounds;
-        var rightY: number = Math.random() * (upperBounds - lowerBounds) + lowerBounds;
-
-        // bisect
-        var bisect = (minX, maxX, minY, maxY, maxDepth) => {
-            if (maxDepth < 0) return;
-
-            var middleX = (minX + maxX) / 2.0;
-            var newY = Math.random() * (maxY - minY) + minY;
-            var point = new Point(middleX, newY);
-
-            // push point
-            this.border.push(point);
-
-            // bisect
-            bisect(minX, middleX, minY, newY, maxDepth - 1);
-            bisect(middleX, maxX, minY, newY, maxDepth - 1);
+        return {
+            angle: randomAngle,
+            point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
         };
-
-        // kick it off
-        this.border.push(new Point(0, leftY));
-        bisect(0, this.ctxWidth, lowerBounds, upperBounds, this.config.terrainResolution);
-        this.border.push(new Point(this.ctxWidth, rightY));
-
-        // sort the border by X coordiate
-        this.border.sort((a: Point, b: Point) => {
-            return a.x - b.x;
-        });
-
-        // fill in the border
-        var filledBorder: Array<Point> = [];
-
-        // draw line
-        var drawLine = (x0, y0, x1, y1) => {
-            var dx = Math.abs(x1 - x0);
-            var dy = Math.abs(y1 - y0);
-            var sx = (x0 < x1) ? 1 : -1;
-            var sy = (y0 < y1) ? 1 : -1;
-            var err = dx - dy;
-
-            while (true) {
-                filledBorder.push(new Point(x0, y0));
-
-                if ((x0 == x1) && (y0 == y1)) break;
-                var e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x0 += sx; }
-                if (e2 < dx) { err += dx; y0 += sy; }
-            }
-        };
-
-        // loop through and create filled border
-        for (var i = 0; i < this.border.length - 1; i++) {
-
-            var me = this.border[i];
-            var nx = this.border[i + 1];
-
-            // this includes me and nx
-            drawLine(me.x, me.y, nx.x, nx.y);
-        }
-
-        // set border to filled border
-        this.border = filledBorder;
-
-        // fill in pixel buffer
-
-        // march across the border pixels
-        // NOTE: 
-        //
-        // There's a weird issue where the filled border
-        // is actually longer than ctxWidth, so we were overwriting
-        // pixels.
-        //
-        // We changed this so we only go up to ctxWidth and ignore
-        // extra shit.
-        for (var col = 0; col < this.ctxWidth; col++) {
-
-            // move down and fill in every y pixel underneath us
-            for (var row = 0; row < this.ctxHeight - filledBorder[col].y; row++) {
-
-                // offset row because it starts at origin (0) and we need
-                // it to be at the right offset
-                this.pixelBuffer[col + (row + filledBorder[col].y) * this.ctxWidth] = 1;
-
-            }
-        }
     }
 
+    public destruct(point: Point, radius: number) {
+       
+        this.planetCtx.beginPath();
+        this.planetCtx.globalCompositeOperation = 'destination-out';        
+        this.planetCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCtx.closePath();
+        this.planetCtx.fill();
 
+        this.planetCollisionCtx.beginPath();
+        this.planetCollisionCtx.globalCompositeOperation = 'destination-out';
+        this.planetCollisionCtx.arc(point.x - this.x, point.y - this.y, radius, 0, Math.PI * 2);
+        this.planetCollisionCtx.closePath();
+        this.planetCollisionCtx.fill();
+    }
+
+    xa: number = 0;
+    ya: number = 0.6;
+
+    xf: number = 0.8;
+    yf: number = 0.7;
+
+    public actOn(actor: Actor, delta: number): void {
+
+        var G = Config.gravity;
+        var x = this.x + this.radius;
+        var y = this.y + this.radius;
+
+        var xdiff = actor.x - x;
+        var ydiff = actor.y - y;
+        var dSquared = (xdiff * xdiff) + (ydiff * ydiff);
+        var d = Math.sqrt(dSquared);
+        var a = -G * ((1 * this.radius) / dSquared); // f = ma, f = 1 * a, f = a
+        if (a > 10) a = 10; // max accel clamp
+        var xa = a * ((xdiff) / d); // cos theta = adjacent / hypotenuse
+        var ya = a * ((ydiff) / d); // sin theta = opposite / hypotenuse
+
+        actor.dx += xa;
+        actor.dy += ya;
+
+        //actor.dx *= this.xf;
+        //actor.dy *= this.yf;
+
+        if (Math.abs(actor.dx) > 30) {
+            actor.dx *= 0.9;
+        }
+        if (Math.abs(actor.dy) > 30) {
+            actor.dy *= 0.9;
+        }
+
+        actor.x += actor.dx;
+        actor.y += actor.dy;
+    }
+
+    private generate(): void {       
+
+        // get a random radius to use
+        this.radius = Math.random() * (Config.planetMaxRadius - Config.planetMinRadius) + Config.planetMinRadius;
+
+        this.setWidth(this.radius * 2);
+        this.setHeight(this.radius * 2);
+
+        // create off-screen canvases
+        // draw = what we draw to and copy over to game canvas
+        // collision = what we draw to and use for collision checking
+        var draw = this.generateCanvas(this.color);
+        var collision = this.generateCanvas(Colors.Black);
+
+        this.planetCanvas = draw.canvas;
+        this.planetCtx = draw.ctx;    
+        this.planetCollisionCanvas = collision.canvas;
+        this.planetCollisionCtx = collision.ctx;
+    }
+
+    private generateCanvas(color: Color) {
+        var canvas = document.createElement('canvas'),
+            ctx = canvas.getContext('2d');
+
+        canvas.width = this.radius * 2 + 2;
+        canvas.height = this.radius * 2 + 2;
+
+        // draw arc
+        ctx.beginPath();
+        ctx.fillStyle = color.toString();
+        ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        return {
+            canvas: canvas,
+            ctx: ctx
+        };
+    }
 }

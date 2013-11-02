@@ -10,7 +10,7 @@ namespace Web {
         public static void RegisterBundles(BundleCollection bundles) {
             
             bundles.Add(new Bundle("~/_scripts/game").Include(
-                "~/scripts/game/Engine.js",
+                "~/scripts/game/Excalibur.js",
                 "~/scripts/game.js"));
 
         }

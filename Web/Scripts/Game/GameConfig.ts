@@ -1,4 +1,6 @@
-﻿var Config = {
+﻿/// <reference path="Excalibur.d.ts" />
+
+var Config = {
 
     // width of tanks
     tankWidth: 32,
@@ -16,13 +18,13 @@
     barrelWidth: 2,
 
     // Default firing power
-    defaultFirepower: 25,
+    defaultFirepower: 300,
 
     // Firepower adjustment delta
-    firepowerDelta: 15,
+    firepowerDelta: 70,
 
     // Firepower maximum speed
-    firepowerMax: 100,
+    firepowerMax: 1000,
 
     // Firepower minimum speed
     firepowerMin: 0,
@@ -30,19 +32,34 @@
     // Firepower acceleration
     firepowerAccel: 0.5,
 
-    // Bullet speed modifier
-    bulletSpeedModifier: 2,
+    // Projectile speed modifier
+    bulletSpeedModifier: 0.003,
 
     // Gravity constant
-    gravity: 50
+    gravity: 6,
+
+    // Minimum planet radius
+    planetMinRadius: 35,
+
+    // Maximum planet radius
+    planetMaxRadius: 200,
+
+    // # of planets to generate
+    maxPlanets: 8,
+
+    // amount of distance from canvas edges to spawn planets
+    planetGenerationPadding: 120
 };
 
 var Colors = {
+    Black: Color.fromHex("#000000"),
+    White: Color.fromHex("#ffffff"),
 
     Background: Color.fromHex("#141414"),
     Player: Color.fromHex("#a73c3c"),
     Enemy: Color.fromHex("#c0b72a"),
     Land: Color.fromHex("#8c8c8c"),
-    Bullet: Color.fromHex("#ffffff")
-
+    Projectile: Color.fromHex("#ffffff"),
+    ExplosionBegin: Color.fromHex("#ddd32f"),
+    ExplosionEnd: Color.fromHex("#c12713")
 };

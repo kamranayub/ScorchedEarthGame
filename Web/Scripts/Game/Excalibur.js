@@ -1,3 +1,8 @@
+if (typeof window == 'undefined') {
+    var window = { audioContext: function () {
+        } };
+}
+
 if (typeof window != 'undefined' && !window.requestAnimationFrame) {
     (window).requestAnimationFrame = (window).webkitRequestAnimationFrame || (window).mozRequestAnimationFrame || function (callback) {
         window.setInterval(callback, 1000 / 60);
@@ -20,15 +25,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -198,8 +203,9 @@ var Actor = (function () {
         this.ay = 0;
         this.invisible = false;
         this.solid = true;
-        this.animations = {};
-        this.currentAnimation = null;
+        this.frames = {};
+        //public animations : {[key : string] : Drawing.Animation;} = {};
+        this.currentDrawing = null;
         this.x = x || 0;
         this.y = y || 0;
         this.width = width || 0;
@@ -218,11 +224,11 @@ var Actor = (function () {
     };
 
     // Play animation in Actor's list
-    Actor.prototype.playAnimation = function (key) {
-        if (this.currentAnimation != this.animations[key]) {
-            this.animations[key].reset();
+    Actor.prototype.setDrawing = function (key) {
+        if (this.currentDrawing != this.frames[key]) {
+            this.frames[key].reset();
         }
-        this.currentAnimation = this.animations[key];
+        this.currentDrawing = this.frames[key];
     };
 
     Actor.prototype.addEventListener = function (eventName, handler) {
@@ -241,8 +247,16 @@ var Actor = (function () {
         return this.width * this.scale;
     };
 
+    Actor.prototype.setWidth = function (width) {
+        this.width = width / this.scale;
+    };
+
     Actor.prototype.getHeight = function () {
         return this.height * this.scale;
+    };
+
+    Actor.prototype.setHeight = function (height) {
+        this.height = height / this.scale;
     };
 
     Actor.prototype.getLeft = function () {
@@ -321,10 +335,10 @@ var Actor = (function () {
     };
 
     // Add an animation to Actor's list
-    Actor.prototype.addAnimation = function (key, animation) {
-        this.animations[key] = animation;
-        if (!this.currentAnimation) {
-            this.currentAnimation = animation;
+    Actor.prototype.addDrawing = function (key, drawing) {
+        this.frames[key] = drawing;
+        if (!this.currentDrawing) {
+            this.currentDrawing = drawing;
         }
     };
 
@@ -411,7 +425,7 @@ var Actor = (function () {
             var side = Side.NONE;
             if (other !== this && (side = this.collides(other)) !== Side.NONE) {
                 var overlap = this.getOverlap(other);
-                eventDispatcher.publish(EventType[EventType.COLLISION], new CollisonEvent(this, (other), side));
+                eventDispatcher.publish(EventType[EventType.COLLISION], new CollisionEvent(this, other, side));
                 if (!this.solid) {
                     if (Math.abs(overlap.y) < Math.abs(overlap.x)) {
                         this.y += overlap.y;
@@ -443,8 +457,8 @@ var Actor = (function () {
         this.sceneNode.draw(ctx, delta);
 
         if (!this.invisible) {
-            if (this.currentAnimation) {
-                this.currentAnimation.draw(ctx, 0, 0);
+            if (this.currentDrawing) {
+                this.currentDrawing.draw(ctx, 0, 0);
             } else {
                 ctx.fillStyle = this.color ? this.color.toString() : (new Color(0, 0, 0)).toString();
                 ctx.fillRect(0, 0, this.width, this.height);
@@ -518,15 +532,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -1071,6 +1085,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /// <reference path="Core.ts" />
 /// <reference path="Entities.ts" />
+/// <reference path="Log.ts" />
 var EventType;
 (function (EventType) {
     EventType[EventType["KEYDOWN"] = 0] = "KEYDOWN";
@@ -1092,15 +1107,15 @@ var ActorEvent = (function () {
     return ActorEvent;
 })();
 
-var CollisonEvent = (function (_super) {
-    __extends(CollisonEvent, _super);
-    function CollisonEvent(actor, other, side) {
+var CollisionEvent = (function (_super) {
+    __extends(CollisionEvent, _super);
+    function CollisionEvent(actor, other, side) {
         _super.call(this);
         this.actor = actor;
         this.other = other;
         this.side = side;
     }
-    return CollisonEvent;
+    return CollisionEvent;
 })(ActorEvent);
 
 var UpdateEvent = (function (_super) {
@@ -1153,9 +1168,14 @@ var EventDispatcher = (function () {
     function EventDispatcher(target) {
         this._handlers = {};
         this.queue = [];
+        this.log = Logger.getInstance();
         this.target = target;
     }
     EventDispatcher.prototype.publish = function (eventName, event) {
+        if (!eventName) {
+            this.log.log("Unmapped event", Log.WARN);
+            return;
+        }
         eventName = eventName.toLowerCase();
         var queue = this.queue;
         var target = this.target;
@@ -1197,15 +1217,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -1213,6 +1233,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+/// <reference path="Core.ts" />
 var Drawing;
 (function (Drawing) {
     var SpriteSheet = (function () {
@@ -1241,16 +1262,26 @@ var Drawing;
                 }
             }
         }
-        SpriteSheet.prototype.getAnimationForRow = function (rowIndex, start, count, speed) {
-            var begin = start + rowIndex * this.columns;
-            return new Animation(this.sprites.slice(begin, begin + count), speed);
-        };
-
-        SpriteSheet.prototype.getAnimationByIndices = function (indices, speed) {
+        SpriteSheet.prototype.getAnimationByIndices = function (engine, indices, speed) {
             var images = this.sprites.filter(function (sprite, index) {
                 return indices.indexOf(index) > -1;
             });
-            return new Animation(images, speed);
+            return new Animation(engine, images, speed);
+        };
+
+        SpriteSheet.prototype.getAnimationBetween = function (engine, beginIndex, endIndex, speed) {
+            var images = this.sprites.slice(beginIndex, endIndex);
+            return new Animation(engine, images, speed);
+        };
+
+        SpriteSheet.prototype.getAnimationForAll = function (engine, speed) {
+            return new Animation(engine, this.sprites, speed);
+        };
+
+        SpriteSheet.prototype.getSprite = function (index) {
+            if (index >= 0 && index < this.sprites.length) {
+                return this.sprites[index];
+            }
         };
         return SpriteSheet;
     })();
@@ -1309,6 +1340,9 @@ var Drawing;
         Sprite.prototype.setScale = function (scale) {
             this.scale = scale;
         };
+        Sprite.prototype.reset = function () {
+            // do nothing
+        };
 
         Sprite.prototype.draw = function (ctx, x, y) {
             ctx.drawImage(this.internalImage, this.sx, this.sy, this.swidth, this.sheight, x, y, this.swidth * this.scale, this.sheight * this.scale);
@@ -1325,16 +1359,18 @@ var Drawing;
     var AnimationType = Drawing.AnimationType;
 
     var Animation = (function () {
-        function Animation(images, speed) {
+        function Animation(engine, images, speed, loop) {
             this.currIndex = 0;
             this.oldTime = Date.now();
             this.rotation = 0.0;
             this.scale = 1.0;
-            this.type = AnimationType.CYCLE;
-            this.direction = 1;
+            this.loop = false;
             this.sprites = images;
             this.speed = speed;
-            this.maxIndex = images.length;
+            this.engine = engine;
+            if (loop != null) {
+                this.loop = loop;
+            }
         }
         Animation.prototype.setRotation = function (radians) {
             this.rotation = radians;
@@ -1350,54 +1386,32 @@ var Drawing;
             }
         };
 
-        Animation.prototype.cycle = function () {
-            var time = Date.now();
-            if ((time - this.oldTime) > this.speed) {
-                this.currIndex = (this.currIndex + 1) % this.maxIndex;
-                this.oldTime = time;
-            }
-        };
-
-        Animation.prototype.pingpong = function () {
-            var time = Date.now();
-            if ((time - this.oldTime) > this.speed) {
-                if (this.currIndex + this.direction === this.maxIndex || this.currIndex + this.direction === -1) {
-                    this.direction = -1 * this.direction;
-                }
-                this.currIndex += this.direction;
-
-                this.oldTime = time;
-            }
-        };
-
-        Animation.prototype.once = function () {
-            var time = Date.now();
-            if ((time - this.oldTime) > this.speed) {
-                if (this.currIndex + 1 < this.maxIndex) {
-                    this.currIndex++;
-                }
-                this.oldTime = time;
-            }
-        };
-
         Animation.prototype.reset = function () {
             this.currIndex = 0;
-            this.direction = 1;
+        };
+
+        Animation.prototype.isDone = function () {
+            return (!this.loop && this.currIndex >= this.sprites.length);
         };
 
         Animation.prototype.tick = function () {
-            if (this.type === AnimationType.CYCLE) {
-                this.cycle();
-            } else if (this.type === AnimationType.PINGPONG) {
-                this.pingpong();
-            } else if (this.type === AnimationType.ONCE) {
-                this.once();
+            var time = Date.now();
+            if ((time - this.oldTime) > this.speed) {
+                this.currIndex = (this.loop ? (this.currIndex + 1) % this.sprites.length : this.currIndex + 1);
+                this.oldTime = time;
             }
         };
 
         Animation.prototype.draw = function (ctx, x, y) {
             this.tick();
-            this.sprites[this.currIndex].draw(ctx, x, y);
+            if (this.currIndex < this.sprites.length) {
+                this.sprites[this.currIndex].draw(ctx, x, y);
+            }
+        };
+
+        Animation.prototype.play = function (x, y) {
+            this.reset();
+            this.engine.playAnimation(this, x, y);
         };
         return Animation;
     })();
@@ -1416,15 +1430,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -1445,15 +1459,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -1507,15 +1521,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -1667,15 +1681,15 @@ notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software
 must display the following acknowledgement:
-This product includes software developed by the GameTS Team.
+This product includes software developed by the ExcaliburJS Team.
 4. Neither the name of the creator nor the
 names of its contributors may be used to endorse or promote products
 derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE GAMETS TEAM ''AS IS'' AND ANY
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE GAMETS TEAM BE LIABLE FOR ANY
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
 DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSIENSS INTERRUPTION) HOWEVER CAUSED AND
@@ -1699,6 +1713,7 @@ var Color = (function () {
         this.g = g;
         this.b = b;
         this.a = a;
+        this.a = (a != null ? a : 255);
     }
     Color.fromRGB = function (r, g, b, a) {
         return new Color(r, g, b, a);
@@ -1712,9 +1727,9 @@ var Color = (function () {
             var r = parseInt(match[1], 16);
             var g = parseInt(match[2], 16);
             var b = parseInt(match[3], 16);
-            var a;
+            var a = 255;
             if (match[4]) {
-                a = parseInt(match[4]);
+                a = parseInt(match[4], 16);
             }
             return new Color(r, g, b, a);
         } else {
@@ -1795,6 +1810,14 @@ var Keys;
     Keys[Keys["ESC"] = 27] = "ESC";
 })(Keys || (Keys = {}));
 ;
+var AnimationNode = (function () {
+    function AnimationNode(animation, x, y) {
+        this.animation = animation;
+        this.x = x;
+        this.y = y;
+    }
+    return AnimationNode;
+})();
 
 var Engine = (function () {
     function Engine(width, height, canvasElementId) {
@@ -1802,6 +1825,7 @@ var Engine = (function () {
         this.keys = [];
         this.keysDown = [];
         this.keysUp = [];
+        this.animations = [];
         //public camera : ICamera;
         this.isFullscreen = false;
         this.isDebug = false;
@@ -1834,6 +1858,10 @@ var Engine = (function () {
     }
     Engine.prototype.addEventListener = function (eventName, handler) {
         this.eventDispatcher.subscribe(eventName, handler);
+    };
+
+    Engine.prototype.playAnimation = function (animation, x, y) {
+        this.animations.push(new AnimationNode(animation, x, y));
     };
 
     Engine.prototype.addChild = function (actor) {
@@ -1935,6 +1963,11 @@ var Engine = (function () {
             eventDispatcher.publish(Keys[key], new KeyEvent(this, key));
         });
 
+        // update animations
+        this.animations = this.animations.filter(function (a) {
+            return !a.animation.isDone();
+        });
+
         // Reset keysDown and keysUp after update is complete
         this.keysDown.length = 0;
         this.keysUp.length = 0;
@@ -1965,6 +1998,10 @@ var Engine = (function () {
 
         this.currentScene.draw(this.ctx, delta);
 
+        this.animations.forEach(function (a) {
+            a.animation.draw(ctx, a.x, a.y);
+        });
+
         if (this.isDebug) {
             this.ctx.strokeStyle = 'yellow';
             this.currentScene.debugDraw(this.ctx);
@@ -1993,7 +2030,6 @@ var Engine = (function () {
                 var elapsed = Math.floor(now - lastTime) || 1;
 
                 game.update(elapsed);
-
                 game.draw(elapsed);
 
                 lastTime = now;
