@@ -5,6 +5,7 @@ module Resources {
     }
 
     export class Tanks {
+        public static dieSound: Media.ISound = new Media.Sound("/Sounds/Die.wav");
         public static fireSound: Media.ISound = new Media.Sound("/Sounds/Fire.wav");
         public static moveBarrelSound: Media.ISound = new Media.Sound("/Sounds/MoveBarrel.wav");
     }  

@@ -156,6 +156,7 @@
     <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />
     <TypeScriptCompile Include="Scripts\Game\Landmass.ts" />
     <Content Include="Scripts\Game\Tank.ts" />
+    <Content Include="Sounds\Die.wav" />
     <Content Include="Sounds\Explosion-Small.wav" />
     <Content Include="Sounds\Fire.wav" />
     <Content Include="Sounds\MoveBarrel.wav" />

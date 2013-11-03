@@ -55,6 +55,8 @@ class Landmass extends CollisionActor {
     }
 
     public collide(engine: Engine, actor: Actor) {
+        super.collide(engine, actor);
+
         if (actor instanceof Explosion) {
             this.destruct(new Point(actor.x, actor.y), (<Explosion>actor).radius);
         }
@@ -75,12 +77,16 @@ class Landmass extends CollisionActor {
         this.planetCollisionCtx.fill();
     }
 
-    xa: number = 0;
-    ya: number = 0.6;
+    // clamp velocities because > 2 is too much
+    // max x velocity
+    xm: number = 1.8;
+    // max y velocity
+    ym: number = 1.8;
 
-    xf: number = 0.8;
-    yf: number = 0.7;
-
+    /**
+     * Pseudo orbital calculations
+     * Acts on the actor by manipulating its velocities
+     */
     public actOn(actor: Actor, delta: number): void {
 
         var G = Config.gravity;
@@ -99,14 +105,11 @@ class Landmass extends CollisionActor {
         actor.dx += xa;
         actor.dy += ya;
 
-        //actor.dx *= this.xf;
-        //actor.dy *= this.yf;
-
-        if (Math.abs(actor.dx) > 30) {
-            actor.dx *= 0.9;
+        if (Math.abs(actor.dx) > this.xm) {
+            actor.dx = actor.dx < 0 ? -this.xm : this.xm;
         }
-        if (Math.abs(actor.dy) > 30) {
-            actor.dy *= 0.9;
+        if (Math.abs(actor.dy) > this.ym) {
+            actor.dy = actor.dy < 0 ? -this.ym : this.ym;
         }
 
         actor.x += actor.dx;

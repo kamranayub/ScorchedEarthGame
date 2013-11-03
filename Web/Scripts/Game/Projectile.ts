@@ -25,7 +25,7 @@ class Projectile extends Actor {
             if (actor instanceof Landmass) {
                 (<Landmass>actor).actOn(this, delta);
             }
-        });            
+        });                    
 
         // out of bounds
         if (this.y > engine.canvas.height ||

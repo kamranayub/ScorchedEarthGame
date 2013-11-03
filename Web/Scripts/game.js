@@ -142,10 +142,11 @@ var Landmass = (function (_super) {
     __extends(Landmass, _super);
     function Landmass() {
         _super.call(this, 0, 0, null, null, Colors.Land);
-        this.xa = 0;
-        this.ya = 0.6;
-        this.xf = 0.8;
-        this.yf = 0.7;
+        // clamp velocities because > 2 is too much
+        // max x velocity
+        this.xm = 1.8;
+        // max y velocity
+        this.ym = 1.8;
 
         this.generate();
     }
@@ -173,6 +174,8 @@ var Landmass = (function (_super) {
     };
 
     Landmass.prototype.collide = function (engine, actor) {
+        _super.prototype.collide.call(this, engine, actor);
+
         if (actor instanceof Explosion) {
             this.destruct(new Point(actor.x, actor.y), (actor).radius);
         }
@@ -192,6 +195,10 @@ var Landmass = (function (_super) {
         this.planetCollisionCtx.fill();
     };
 
+    /**
+    * Pseudo orbital calculations
+    * Acts on the actor by manipulating its velocities
+    */
     Landmass.prototype.actOn = function (actor, delta) {
         var G = Config.gravity;
         var x = this.x + this.radius;
@@ -210,11 +217,11 @@ var Landmass = (function (_super) {
         actor.dx += xa;
         actor.dy += ya;
 
-        if (Math.abs(actor.dx) > 30) {
-            actor.dx *= 0.9;
+        if (Math.abs(actor.dx) > this.xm) {
+            actor.dx = actor.dx < 0 ? -this.xm : this.xm;
         }
-        if (Math.abs(actor.dy) > 30) {
-            actor.dy *= 0.9;
+        if (Math.abs(actor.dy) > this.ym) {
+            actor.dy = actor.dy < 0 ? -this.ym : this.ym;
         }
 
         actor.x += actor.dx;
@@ -291,6 +298,7 @@ var Resources;
     var Tanks = (function () {
         function Tanks() {
         }
+        Tanks.dieSound = new Media.Sound("/Sounds/Die.wav");
         Tanks.fireSound = new Media.Sound("/Sounds/Fire.wav");
         Tanks.moveBarrelSound = new Media.Sound("/Sounds/MoveBarrel.wav");
         return Tanks;
@@ -304,7 +312,7 @@ var Explosion = (function (_super) {
         this.radius = radius;
         this.damage = damage;
 
-        this.expansionModifier = 200;
+        this.expansionModifier = 0.15;
         this._currentRadius = 0;
         this._colorDiffR = Colors.ExplosionEnd.r - Colors.ExplosionBegin.r;
         this._colorDiffG = Colors.ExplosionEnd.g - Colors.ExplosionBegin.g;
@@ -335,7 +343,7 @@ var Explosion = (function (_super) {
             return;
         } else {
             // mod current radius by duration
-            this._currentRadius += (this.expansionModifier / 1000) * delta;
+            this._currentRadius += this.expansionModifier * delta;
         }
     };
 
@@ -638,9 +646,20 @@ var Tank = (function (_super) {
     };
 
     Tank.prototype.die = function (engine) {
-        // todo: EXPLODE
+        // play explosions
+        var minX = this.x - 15, maxX = this.x + 15, minY = this.y - 15, maxY = this.y + 15;
+
         // kill
         engine.removeChild(this);
+
+        // badass explode sound
+        Resources.Tanks.dieSound.play();
+
+        for (var i = 0; i < 5; i++) {
+            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
+            engine.addChild(splody);
+            console.log("Added splody", splody.x, splody.y);
+        }
     };
     return Tank;
 })(CollisionActor);

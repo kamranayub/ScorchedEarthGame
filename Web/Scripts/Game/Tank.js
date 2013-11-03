@@ -135,9 +135,20 @@ var Tank = (function (_super) {
     };
 
     Tank.prototype.die = function (engine) {
-        // todo: EXPLODE
+        // play explosions
+        var minX = this.x - 15, maxX = this.x + 15, minY = this.y - 15, maxY = this.y + 15;
+
         // kill
         engine.removeChild(this);
+
+        // badass explode sound
+        Resources.Tanks.dieSound.play();
+
+        for (var i = 0; i < 5; i++) {
+            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
+            engine.addChild(splody);
+            console.log("Added splody", splody.x, splody.y);
+        }
     };
     return Tank;
 })(CollisionActor);

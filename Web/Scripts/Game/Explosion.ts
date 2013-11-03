@@ -14,7 +14,7 @@ class Explosion extends Actor {
     constructor(x: number, y: number, public radius: number, public damage: number) {
         super(x, y, radius, radius, Colors.ExplosionBegin);
         
-        this.expansionModifier = 200;
+        this.expansionModifier = 0.15;
         this._currentRadius = 0;        
         this._colorDiffR = Colors.ExplosionEnd.r - Colors.ExplosionBegin.r;
         this._colorDiffG = Colors.ExplosionEnd.g - Colors.ExplosionBegin.g;
@@ -50,7 +50,7 @@ class Explosion extends Actor {
             return;
         } else {
             // mod current radius by duration 
-            this._currentRadius += (this.expansionModifier / 1000) * delta;
+            this._currentRadius += this.expansionModifier * delta;
         }
     }
 
