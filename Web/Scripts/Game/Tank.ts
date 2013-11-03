@@ -138,6 +138,10 @@ class Tank extends CollisionActor {
         }
     }
 
+    /**
+     * Whether or not the given point has hit this actor
+     * Uses an off-screen canvas and pixel data to determine hit test
+     */
     public isHit(engine: Engine, x: number, y: number): boolean {
         var collisionCanvas = document.createElement("canvas");
         collisionCanvas.width = engine.canvas.width;
@@ -152,9 +156,7 @@ class Tank extends CollisionActor {
         var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
 
         collisionCanvas = null;
-        collisionCtx = null;
-
-        console.log("IsHit:", Math.floor(x), Math.floor(y), collisionPixelData);
+        collisionCtx = null;        
 
         return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
     }

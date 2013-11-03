@@ -126,6 +126,10 @@ var Tank = (function (_super) {
         }
     };
 
+    /**
+    * Whether or not the given point has hit this actor
+    * Uses an off-screen canvas and pixel data to determine hit test
+    */
     Tank.prototype.isHit = function (engine, x, y) {
         var collisionCanvas = document.createElement("canvas");
         collisionCanvas.width = engine.canvas.width;
@@ -141,8 +145,6 @@ var Tank = (function (_super) {
 
         collisionCanvas = null;
         collisionCtx = null;
-
-        console.log("IsHit:", Math.floor(x), Math.floor(y), collisionPixelData);
 
         return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
     };
