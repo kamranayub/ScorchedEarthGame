@@ -103,6 +103,28 @@ var CollisionActor = (function (_super) {
         this.draw(ctx, delta);
         this.color = oldColor;
     };
+
+    CollisionActor.prototype.isHit = function (engine, x, y) {
+        var collisionCanvas = document.createElement("canvas");
+        collisionCanvas.width = engine.canvas.width;
+        collisionCanvas.height = engine.canvas.height;
+
+        var collisionCtx = collisionCanvas.getContext('2d');
+        collisionCtx.fillStyle = 'white';
+        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+
+        this.drawCollisionMap(collisionCtx, 0);
+
+        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+        collisionCanvas = null;
+        collisionCtx = null;
+
+        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+    };
+
+    CollisionActor.prototype.collide = function (engine, actor) {
+    };
     return CollisionActor;
 })(Actor);
 /// <reference path="Excalibur.d.ts" />
@@ -148,6 +170,12 @@ var Landmass = (function (_super) {
             angle: randomAngle,
             point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
         };
+    };
+
+    Landmass.prototype.collide = function (engine, actor) {
+        if (actor instanceof Explosion) {
+            this.destruct(new Point(actor.x, actor.y), (actor).radius);
+        }
     };
 
     Landmass.prototype.destruct = function (point, radius) {
@@ -294,15 +322,11 @@ var Explosion = (function (_super) {
         if (this._currentRadius >= this.radius) {
             // loop through landmasses and destruct
             engine.currentScene.children.forEach(function (actor) {
-                if (actor instanceof Landmass) {
-                    (actor).destruct(new Point(_this.x, _this.y), _this.radius);
-                }
+                if (actor instanceof CollisionActor) {
+                    var collActor = (actor);
 
-                if (actor instanceof Tank) {
-                    var tank = (actor);
-
-                    if (tank.isHit(engine, _this.x, _this.y)) {
-                        tank.damage(engine, _this.damage);
+                    if (collActor.isHit(engine, _this.x, _this.y)) {
+                        collActor.collide(engine, _this);
                     }
                 }
             });
@@ -605,25 +629,12 @@ var Tank = (function (_super) {
         }
     };
 
-    Tank.prototype.isHit = function (engine, x, y) {
-        var collisionCanvas = document.createElement("canvas");
-        collisionCanvas.width = engine.canvas.width;
-        collisionCanvas.height = engine.canvas.height;
+    Tank.prototype.collide = function (engine, actor) {
+        _super.prototype.collide.call(this, engine, actor);
 
-        var collisionCtx = collisionCanvas.getContext('2d');
-        collisionCtx.fillStyle = 'white';
-        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
-
-        this.drawCollisionMap(collisionCtx, 0);
-
-        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-        collisionCanvas = null;
-        collisionCtx = null;
-
-        console.log("IsHit:", Math.floor(x), Math.floor(y), collisionPixelData);
-
-        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+        if (actor instanceof Explosion) {
+            this.damage(engine, (actor).damage);
+        }
     };
 
     Tank.prototype.die = function (engine) {

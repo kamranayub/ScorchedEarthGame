@@ -54,6 +54,12 @@ class Landmass extends CollisionActor {
         };
     }
 
+    public collide(engine: Engine, actor: Actor) {
+        if (actor instanceof Explosion) {
+            this.destruct(new Point(actor.x, actor.y), (<Explosion>actor).radius);
+        }
+    }
+
     public destruct(point: Point, radius: number) {
        
         this.planetCtx.beginPath();

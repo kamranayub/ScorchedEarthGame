@@ -126,27 +126,12 @@ var Tank = (function (_super) {
         }
     };
 
-    /**
-    * Whether or not the given point has hit this actor
-    * Uses an off-screen canvas and pixel data to determine hit test
-    */
-    Tank.prototype.isHit = function (engine, x, y) {
-        var collisionCanvas = document.createElement("canvas");
-        collisionCanvas.width = engine.canvas.width;
-        collisionCanvas.height = engine.canvas.height;
+    Tank.prototype.collide = function (engine, actor) {
+        _super.prototype.collide.call(this, engine, actor);
 
-        var collisionCtx = collisionCanvas.getContext('2d');
-        collisionCtx.fillStyle = 'white';
-        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
-
-        this.drawCollisionMap(collisionCtx, 0);
-
-        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-        collisionCanvas = null;
-        collisionCtx = null;
-
-        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+        if (actor instanceof Explosion) {
+            this.damage(engine, (actor).damage);
+        }
     };
 
     Tank.prototype.die = function (engine) {

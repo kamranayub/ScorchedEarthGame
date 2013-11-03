@@ -11,7 +11,7 @@ class Explosion extends Actor {
     private _colorDiffG: number;
     private _colorDiffB: number;
 
-    constructor(x: number, y: number, public radius: number, private damage: number) {
+    constructor(x: number, y: number, public radius: number, public damage: number) {
         super(x, y, radius, radius, Colors.ExplosionBegin);
         
         this.expansionModifier = 200;
@@ -37,15 +37,11 @@ class Explosion extends Actor {
 
             // loop through landmasses and destruct
             engine.currentScene.children.forEach((actor: Actor) => {
-                if (actor instanceof Landmass) {
-                    (<Landmass>actor).destruct(new Point(this.x, this.y), this.radius);
-                }
+                if (actor instanceof CollisionActor) {
+                    var collActor = (<CollisionActor>actor);
 
-                if (actor instanceof Tank) {
-                    var tank = (<Tank>actor);
-
-                    if (tank.isHit(engine, this.x, this.y)) {
-                        tank.damage(engine, this.damage);
+                    if (collActor.isHit(engine, this.x, this.y)) {
+                        collActor.collide(engine, this);
                     }
                 }
             });

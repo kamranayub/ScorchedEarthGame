@@ -138,27 +138,12 @@ class Tank extends CollisionActor {
         }
     }
 
-    /**
-     * Whether or not the given point has hit this actor
-     * Uses an off-screen canvas and pixel data to determine hit test
-     */
-    public isHit(engine: Engine, x: number, y: number): boolean {
-        var collisionCanvas = document.createElement("canvas");
-        collisionCanvas.width = engine.canvas.width;
-        collisionCanvas.height = engine.canvas.height;
-        
-        var collisionCtx = collisionCanvas.getContext('2d');
-        collisionCtx.fillStyle = 'white';
-        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+    public collide(engine: Engine, actor: Actor): void {
+        super.collide(engine, actor);
 
-        this.drawCollisionMap(collisionCtx, 0);
-
-        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-        collisionCanvas = null;
-        collisionCtx = null;        
-
-        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+        if (actor instanceof Explosion) {
+            this.damage(engine, (<Explosion>actor).damage);
+        }
     }
 
     private die(engine: Engine): void {
