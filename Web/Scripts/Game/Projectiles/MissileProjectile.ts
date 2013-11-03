@@ -18,7 +18,7 @@ module Projectiles {
             Missile._explodeSound.play();
 
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5);
 
             // add explosion to engine
             engine.addChild(splosion);

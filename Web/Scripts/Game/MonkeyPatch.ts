@@ -9,10 +9,6 @@ module Patches {
         collisionCanvas.height = game.canvas.height;
         var collisionCtx = collisionCanvas.getContext('2d');
 
-        if (game.isDebug) {
-            document.body.appendChild(collisionCanvas);
-        }
-
         var oldDraw = Engine.prototype["draw"];
         Engine.prototype["draw"] = function (delta) {
 

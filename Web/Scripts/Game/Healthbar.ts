@@ -38,6 +38,16 @@ class Healthbar extends Actor {
     }
 
     public setValue(value: number): void {
-        this.current = value;
+        if (value >= 0) {
+            this.current = value;
+        }
+    }
+
+    public reduce(value: number): void {        
+        this.setValue(this.current - value);
+    }
+
+    public getCurrent(): number {
+        return this.current;
     }
 }

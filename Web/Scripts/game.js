@@ -232,6 +232,24 @@ var Landmass = (function (_super) {
     };
     return Landmass;
 })(CollisionActor);
+var GraphicUtils = (function () {
+    function GraphicUtils() {
+    }
+    GraphicUtils.isPixelColorOf = /**
+    * Determines whether or not the given color is present
+    * in the given pixel array.
+    */
+    function (pixels, color) {
+        for (var i = 0; i < pixels.length; i += 4) {
+            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    return GraphicUtils;
+})();
 var Resources;
 (function (Resources) {
     var Global = (function () {
@@ -253,9 +271,10 @@ var Resources;
 })(Resources || (Resources = {}));
 var Explosion = (function (_super) {
     __extends(Explosion, _super);
-    function Explosion(x, y, radius) {
+    function Explosion(x, y, radius, damage) {
         _super.call(this, x, y, radius, radius, Colors.ExplosionBegin);
         this.radius = radius;
+        this.damage = damage;
 
         this.expansionModifier = 200;
         this._currentRadius = 0;
@@ -277,6 +296,14 @@ var Explosion = (function (_super) {
             engine.currentScene.children.forEach(function (actor) {
                 if (actor instanceof Landmass) {
                     (actor).destruct(new Point(_this.x, _this.y), _this.radius);
+                }
+
+                if (actor instanceof Tank) {
+                    var tank = (actor);
+
+                    if (tank.isHit(engine, _this.x, _this.y)) {
+                        tank.damage(engine, _this.damage);
+                    }
                 }
             });
 
@@ -335,27 +362,13 @@ var Projectile = (function (_super) {
         var collisionPixel = new Point(Math.floor(this.x), Math.floor(this.y));
         var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
 
-        if (!this.isColorOf(collisionPixelData, Colors.White)) {
+        if (!GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White)) {
             // collision!
             this.onCollision(engine);
 
             // exit
             return;
         }
-    };
-
-    /**
-    * Determines whether or not the given color is present
-    * in the given pixel array.
-    */
-    Projectile.prototype.isColorOf = function (pixels, color) {
-        for (var i = 0; i < pixels.length; i += 4) {
-            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
-                return true;
-            }
-        }
-
-        return false;
     };
 
     Projectile.prototype.onCollision = function (engine) {
@@ -402,7 +415,17 @@ var Healthbar = (function (_super) {
     };
 
     Healthbar.prototype.setValue = function (value) {
-        this.current = value;
+        if (value >= 0) {
+            this.current = value;
+        }
+    };
+
+    Healthbar.prototype.reduce = function (value) {
+        this.setValue(this.current - value);
+    };
+
+    Healthbar.prototype.getCurrent = function () {
+        return this.current;
     };
     return Healthbar;
 })(Actor);
@@ -423,7 +446,7 @@ var Projectiles;
             Missile._explodeSound.play();
 
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5);
 
             // add explosion to engine
             engine.addChild(splosion);
@@ -450,7 +473,7 @@ var Projectiles;
             BigMissile._explodeSound.play();
 
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 20);
 
             // add explosion to engine
             engine.addChild(splosion);
@@ -462,6 +485,7 @@ var Projectiles;
 })(Projectiles || (Projectiles = {}));
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="GraphicUtils.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="Healthbar.ts" />
@@ -572,6 +596,41 @@ var Tank = (function (_super) {
 
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
+
+    Tank.prototype.damage = function (engine, value) {
+        this.healthbar.reduce(value);
+
+        if (this.healthbar.getCurrent() <= 0) {
+            this.die(engine);
+        }
+    };
+
+    Tank.prototype.isHit = function (engine, x, y) {
+        var collisionCanvas = document.createElement("canvas");
+        collisionCanvas.width = engine.canvas.width;
+        collisionCanvas.height = engine.canvas.height;
+
+        var collisionCtx = collisionCanvas.getContext('2d');
+        collisionCtx.fillStyle = 'white';
+        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+
+        this.drawCollisionMap(collisionCtx, 0);
+
+        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+        collisionCanvas = null;
+        collisionCtx = null;
+
+        console.log("IsHit:", Math.floor(x), Math.floor(y), collisionPixelData);
+
+        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+    };
+
+    Tank.prototype.die = function (engine) {
+        // todo: EXPLODE
+        // kill
+        engine.removeChild(this);
+    };
     return Tank;
 })(CollisionActor);
 
@@ -659,10 +718,6 @@ var Patches;
         collisionCanvas.width = game.canvas.width;
         collisionCanvas.height = game.canvas.height;
         var collisionCtx = collisionCanvas.getContext('2d');
-
-        if (game.isDebug) {
-            document.body.appendChild(collisionCanvas);
-        }
 
         var oldDraw = Engine.prototype["draw"];
         Engine.prototype["draw"] = function (delta) {

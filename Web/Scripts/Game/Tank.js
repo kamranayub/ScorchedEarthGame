@@ -1,5 +1,6 @@
 ﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="GraphicUtils.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
 /// <reference path="Healthbar.ts" />
@@ -115,6 +116,41 @@ var Tank = (function (_super) {
         Resources.Tanks.fireSound.play();
 
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
+    };
+
+    Tank.prototype.damage = function (engine, value) {
+        this.healthbar.reduce(value);
+
+        if (this.healthbar.getCurrent() <= 0) {
+            this.die(engine);
+        }
+    };
+
+    Tank.prototype.isHit = function (engine, x, y) {
+        var collisionCanvas = document.createElement("canvas");
+        collisionCanvas.width = engine.canvas.width;
+        collisionCanvas.height = engine.canvas.height;
+
+        var collisionCtx = collisionCanvas.getContext('2d');
+        collisionCtx.fillStyle = 'white';
+        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+
+        this.drawCollisionMap(collisionCtx, 0);
+
+        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+        collisionCanvas = null;
+        collisionCtx = null;
+
+        console.log("IsHit:", Math.floor(x), Math.floor(y), collisionPixelData);
+
+        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
+    };
+
+    Tank.prototype.die = function (engine) {
+        // todo: EXPLODE
+        // kill
+        engine.removeChild(this);
     };
     return Tank;
 })(CollisionActor);
