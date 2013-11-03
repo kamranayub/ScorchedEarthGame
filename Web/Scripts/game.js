@@ -149,12 +149,15 @@ var Landmass = (function (_super) {
         this.ym = 1.8;
 
         this.generate();
+        this.invisible = true;
     }
     Landmass.prototype.update = function (engine, delta) {
         _super.prototype.update.call(this, engine, delta);
     };
 
     Landmass.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     };
 
@@ -238,7 +241,7 @@ var Landmass = (function (_super) {
         // create off-screen canvases
         // draw = what we draw to and copy over to game canvas
         // collision = what we draw to and use for collision checking
-        var draw = this.generateCanvas(this.color);
+        var draw = this.generateCanvas();
         var collision = this.generateCanvas(Colors.Black);
 
         this.planetCanvas = draw.canvas;
@@ -253,12 +256,23 @@ var Landmass = (function (_super) {
         canvas.width = this.radius * 2 + 2;
         canvas.height = this.radius * 2 + 2;
 
-        // draw arc
-        ctx.beginPath();
-        ctx.fillStyle = color.toString();
-        ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
+        if (color) {
+            // draw arc
+            ctx.beginPath();
+            ctx.fillStyle = color.toString();
+            ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            var planetImages = [
+                Resources.Planet.planet1Image,
+                Resources.Planet.planet2Image,
+                Resources.Planet.planet3Image,
+                Resources.Planet.planet4Image
+            ];
+
+            ctx.drawImage(planetImages[Math.floor(Math.random() * planetImages.length)], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
+        }
 
         return {
             canvas: canvas,
@@ -304,6 +318,21 @@ var Resources;
         return Tanks;
     })();
     Resources.Tanks = Tanks;
+
+    var Planet = (function () {
+        function Planet() {
+            Planet.planet1Image = new Image();
+            Planet.planet1Image.src = '/Textures/planet1.png';
+            Planet.planet2Image = new Image();
+            Planet.planet2Image.src = '/Textures/planet2.png';
+            Planet.planet3Image = new Image();
+            Planet.planet3Image.src = '/Textures/planet3.png';
+            Planet.planet4Image = new Image();
+            Planet.planet4Image.src = '/Textures/planet4.png';
+        }
+        return Planet;
+    })();
+    Resources.Planet = Planet;
 })(Resources || (Resources = {}));
 var Explosion = (function (_super) {
     __extends(Explosion, _super);
@@ -779,103 +808,109 @@ var Patches;
 /// <reference path="Resources.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="MonkeyPatch.ts" />
-var game = new Engine(null, null, 'game');
+new Resources.Planet();
 
-Patches.patchInCollisionMaps(game);
+Resources.Planet.planet4Image.onload = main;
 
-//game.isDebug = true;
-// Set background color
-game.backgroundColor = Colors.Background;
+function main() {
+    var game = new Engine(null, null, 'game');
 
-// create starfield
-var starfield = new Starfield(game.canvas.width, game.canvas.height);
-game.addChild(starfield);
+    Patches.patchInCollisionMaps(game);
 
-// create map
-var planets = [];
-for (var i = 0; i < Config.maxPlanets; i++) {
-    planets.push(new Landmass());
-    game.addChild(planets[i]);
-}
+    //game.isDebug = true;
+    // Set background color
+    game.backgroundColor = Colors.Background;
 
-// position planets
-var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+    // create starfield
+    var starfield = new Starfield(game.canvas.width, game.canvas.height);
+    game.addChild(starfield);
 
-for (var i = 0; i < planets.length; i++) {
-    _planet = planets[i];
+    // create map
+    var planets = [];
+    for (var i = 0; i < Config.maxPlanets; i++) {
+        planets.push(new Landmass());
+        game.addChild(planets[i]);
+    }
 
-    var placed = false;
+    // position planets
+    var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
 
-    while (!placed) {
-        _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
-        _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+    for (var i = 0; i < planets.length; i++) {
+        _planet = planets[i];
 
-        var intersecting = false;
+        var placed = false;
 
-        for (var j = 0; j < planets.length; j++) {
-            if (i === j)
-                continue;
+        while (!placed) {
+            _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+            _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 
-            // use some maths to figure out if this planet touches the other
-            var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+            var intersecting = false;
 
-            if (_planet.radius + otherPlanet.radius > distance) {
-                intersecting = true;
-                break;
+            for (var j = 0; j < planets.length; j++) {
+                if (i === j)
+                    continue;
+
+                // use some maths to figure out if this planet touches the other
+                var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+
+                if (_planet.radius + otherPlanet.radius > distance) {
+                    intersecting = true;
+                    break;
+                }
+            }
+
+            if (!intersecting) {
+                placed = true;
             }
         }
-
-        if (!intersecting) {
-            placed = true;
-        }
     }
+
+    var placeTank = function (tank) {
+        // create player
+        var placed = false;
+        var randomPlanet = planets[Math.floor(Math.random() * planets.length)];
+
+        while (!placed) {
+            var pos = randomPlanet.getRandomPointOnBorder();
+
+            var isInViewport = function () {
+                return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
+            };
+
+            if (isInViewport()) {
+                placed = true;
+
+                console.log("Placing tank", pos);
+
+                // place player on edge of landmass
+                tank.placeOn(randomPlanet, pos.point, pos.angle);
+            }
+        }
+    };
+
+    var playerTank = new PlayerTank(0, 0);
+
+    placeTank(playerTank);
+
+    game.addChild(playerTank);
+
+    // enemy tank
+    var enemyTank = new Tank(0, 0, Colors.Enemy);
+
+    placeTank(enemyTank);
+
+    game.addChild(enemyTank);
+
+    // draw HUD
+    var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
+    powerIndicator.color = Colors.Player;
+    powerIndicator.scale = 1.5;
+    powerIndicator.addEventListener('update', function () {
+        powerIndicator.text = "Power: " + playerTank.firepower;
+    });
+    game.addChild(powerIndicator);
+
+    // run the mainloop
+    game.start();
 }
-
-var placeTank = function (tank) {
-    // create player
-    var placed = false;
-    var randomPlanet = planets[Math.floor(Math.random() * planets.length)];
-
-    while (!placed) {
-        var pos = randomPlanet.getRandomPointOnBorder();
-
-        var isInViewport = function () {
-            return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
-        };
-
-        if (isInViewport()) {
-            placed = true;
-
-            console.log("Placing tank", pos);
-
-            // place player on edge of landmass
-            tank.placeOn(randomPlanet, pos.point, pos.angle);
-        }
-    }
-};
-
-var playerTank = new PlayerTank(0, 0);
-
-placeTank(playerTank);
-
-game.addChild(playerTank);
-
-// enemy tank
-var enemyTank = new Tank(0, 0, Colors.Enemy);
-
-placeTank(enemyTank);
-
-game.addChild(enemyTank);
-
-// draw HUD
-var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-powerIndicator.color = Colors.Player;
-powerIndicator.scale = 1.5;
-powerIndicator.addEventListener('update', function () {
-    powerIndicator.text = "Power: " + playerTank.firepower;
-});
-game.addChild(powerIndicator);
-
-// run the mainloop
-game.start();
 //# sourceMappingURL=game.js.map

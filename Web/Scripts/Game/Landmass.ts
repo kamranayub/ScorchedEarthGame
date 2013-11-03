@@ -28,6 +28,7 @@ class Landmass extends CollisionActor {
         super(0, 0, null, null, Colors.Land);
             
         this.generate();
+        this.invisible = true;
     }
 
     public update(engine: Engine, delta: number) {
@@ -35,6 +36,8 @@ class Landmass extends CollisionActor {
     }
 
     public draw(ctx: CanvasRenderingContext2D, delta: number) {
+        super.draw(ctx, delta);
+
         ctx.drawImage(this.planetCanvas, this.x, this.y);
     }
 
@@ -127,29 +130,40 @@ class Landmass extends CollisionActor {
         // create off-screen canvases
         // draw = what we draw to and copy over to game canvas
         // collision = what we draw to and use for collision checking
-        var draw = this.generateCanvas(this.color);
+        var draw = this.generateCanvas();
         var collision = this.generateCanvas(Colors.Black);
 
         this.planetCanvas = draw.canvas;
         this.planetCtx = draw.ctx;    
         this.planetCollisionCanvas = collision.canvas;
-        this.planetCollisionCtx = collision.ctx;
+        this.planetCollisionCtx = collision.ctx;      
     }
 
-    private generateCanvas(color: Color) {
+    private generateCanvas(color?: Color) {
         var canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d');
-
-        canvas.width = this.radius * 2 + 2;
-        canvas.height = this.radius * 2 + 2;
-
-        // draw arc
-        ctx.beginPath();
-        ctx.fillStyle = color.toString();
-        ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
         
+        canvas.width = this.radius * 2 + 2;
+        canvas.height = this.radius * 2 + 2;        
+
+        if (color) {
+            // draw arc
+            ctx.beginPath();
+            ctx.fillStyle = color.toString();
+            ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        } else {      
+            var planetImages = [
+                Resources.Planet.planet1Image,
+                Resources.Planet.planet2Image,
+                Resources.Planet.planet3Image,
+                Resources.Planet.planet4Image
+            ];
+
+            ctx.drawImage(planetImages[Math.floor(Math.random() * planetImages.length)], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
+        }
+
         return {
             canvas: canvas,
             ctx: ctx

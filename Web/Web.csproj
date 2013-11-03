@@ -161,6 +161,10 @@
     <Content Include="Sounds\Fire.wav" />
     <Content Include="Sounds\MoveBarrel.wav" />
     <Content Include="Spritesheets\SpriteFont.png" />
+    <Content Include="Textures\planet1.png" />
+    <Content Include="Textures\planet2.png" />
+    <Content Include="Textures\planet3.png" />
+    <Content Include="Textures\planet4.png" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
