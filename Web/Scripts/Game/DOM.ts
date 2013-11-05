@@ -9,6 +9,14 @@ class DOM {
     }
 
     /**
+     * Gets a DOM element by ID
+     * @param id The ID to search by
+     */
+    public static idOf<T extends HTMLElement>(id: string): T {
+        return <T>document.getElementById(id);
+    }
+
+    /**
      * Gets a single DOM element by a selector
      * @param selector The selector
      * @param ctx A context to search from (default: null)
@@ -17,6 +25,20 @@ class DOM {
         ctx = ctx || document;
 
         return <HTMLElement>ctx.querySelector(selector);
+    }
+
+    /**
+     * Hides a DOM element
+     */
+    public static hide(element: HTMLElement): void {
+        element.style.display = 'none';
+    }
+
+    /**
+     * Shows a DOM element
+     */
+    public static show(element: HTMLElement): void {
+        element.style.display = 'block';
     }
 
     /**
@@ -78,5 +100,31 @@ class DOM {
      */
     public static removeClass(element: HTMLElement, cls: string): void {
         element.classList.remove(cls);
+    }
+
+    public static onAnimationEnd(element: HTMLElement, done: () => void): void {
+        var animationEndEvent = typeof AnimationEvent === 'undefined' ?
+            'webkitAnimationEnd' : 'animationend';
+
+        var handler = () => {
+            element.removeEventListener(animationEndEvent, handler);
+
+            done();
+        };
+
+        element.addEventListener(animationEndEvent, handler);
+    }
+
+    public static onTransitionEnd(element: HTMLElement, done: () => void): void {
+        var transitionEndEvent = typeof AnimationEvent === 'undefined' ?
+            'webkitTransitionEnd' : 'transitionend';
+
+        var handler = () => {
+            element.removeEventListener(transitionEndEvent, handler);
+
+            done();
+        };
+
+        element.addEventListener(transitionEndEvent, handler);
     }
 }

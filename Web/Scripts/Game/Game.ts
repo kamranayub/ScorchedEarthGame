@@ -1,5 +1,6 @@
 ﻿/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="GameSettings.ts" />
 /// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
@@ -15,8 +16,7 @@ class Game {
     private planets: Landmass[];
 
     constructor() {
-        this.game = new Engine(null, null, 'game');
-        this.ui = new UI(this);
+        this.game = new Engine(null, null, 'game');        
 
         Patches.patchInCollisionMaps(this.game);
 
@@ -59,6 +59,9 @@ class Game {
 
     private init(): void {
 
+        // init UI
+        this.ui = new UI(this);
+
         // play bg music
         Resources.Global.musicAmbient1.sound.setLoop(true);
         Resources.Global.musicAmbient1.sound.setVolume(0.05);
@@ -69,10 +72,28 @@ class Game {
 
         // create starfield
         var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
-        this.game.addChild(starfield);
+        this.game.addChild(starfield);        
+    }
+
+    /**
+     * Starts a new game with the given settings
+     */
+    public newGame(settings: GameSettings): void {
+
+        // reset
+        var children = this.game.currentScene.children.length,
+            child;
+        for (var i = 0; i < children; i++) {
+            child = this.game.currentScene.children[i];
+
+            if (!(child instanceof Starfield)) {
+                this.game.currentScene.removeChild(child);
+            }
+        }
 
         // create map
         this.planets = [];
+
         for (var i = 0; i < Config.maxPlanets; i++) {
             this.planets.push(new Landmass());
             this.game.addChild(this.planets[i]);
@@ -126,12 +147,14 @@ class Game {
 
         this.game.addChild(playerTank);
 
-        // enemy tank
-        var enemyTank = new Tank(0, 0, Colors.Enemy);
+        // enemy tanks
+        for (var i = 0; i < settings.enemies; i++) {
+            var enemyTank = new Tank(0, 0, Colors.Enemy);
 
-        this.placeTank(enemyTank);
+            this.placeTank(enemyTank);
 
-        this.game.addChild(enemyTank);
+            this.game.addChild(enemyTank);
+        }
 
         // draw HUD
         var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
@@ -141,6 +164,14 @@ class Game {
             powerIndicator.text = "Power: " + playerTank.firepower;
         });
         this.game.addChild(powerIndicator);
+    }    
+
+    public startMusic(): void {        
+        Resources.Global.musicAmbient1.sound.play();
+    }
+
+    public stopMusic(): void {
+        Resources.Global.musicAmbient1.sound.stop();
     }
 
     private placeTank(tank: Tank) {
@@ -167,13 +198,5 @@ class Game {
                 tank.placeOn(randomPlanet, pos.point, pos.angle);
             }
         }
-    }
-
-    public startMusic(): void {        
-        Resources.Global.musicAmbient1.sound.play();
-    }
-
-    public stopMusic(): void {
-        Resources.Global.musicAmbient1.sound.stop();
     }
 }

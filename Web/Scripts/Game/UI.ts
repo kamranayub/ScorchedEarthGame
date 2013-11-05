@@ -2,12 +2,67 @@
 
 class UI {
 
+    private newGameBtn: HTMLElement;
     private toggleMusicBtn: HTMLElement;
+    private uiNewGame: HTMLElement;
+    private uiGame: HTMLElement;
 
     constructor(private game: Game) {
-
+        this.uiGame = DOM.id('game');
+        this.uiNewGame = DOM.id('ui-new-game');
+        this.newGameBtn = DOM.id('new-game');
         this.toggleMusicBtn = DOM.id('toggle-music');
+        
+        // init
+        this.init();
+    }
+
+    private init(): void {
+        
+        // add event listeners
+        this.newGameBtn.addEventListener('click', this.showNewGame.bind(this));
         this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+        DOM.query('form', this.uiNewGame).addEventListener('submit', this.onNewGame.bind(this));
+
+        this.showNewGame();
+    }
+
+    private showNewGame(): void {
+        this.showDialog(this.uiNewGame);
+    }
+
+    private onNewGame(e: Event): void {
+        e.preventDefault();
+
+        var settings = new GameSettings();
+
+        var mapSizeElement = DOM.idOf<HTMLSelectElement>('mapsize');
+        var enemyElement = DOM.idOf<HTMLInputElement>('enemies');
+        var enemies = parseInt(enemyElement.value, 10);
+
+        settings.mapSize = parseInt(mapSizeElement.value, 10);
+
+        switch (settings.mapSize) {
+            case MapSize.Small:
+                settings.enemies = Math.min(2, enemies);
+                break;
+            case MapSize.Medium:
+                settings.enemies = Math.min(5, enemies);
+                break;
+            case MapSize.Large:
+                settings.enemies = Math.min(9, enemies);
+                break;
+            case MapSize.Huge:
+                settings.enemies = Math.min(19, enemies);
+                break;
+            default:
+                alert('Map size is invalid');
+                return;
+                break;
+        } 
+
+        this.hideDialog(this.uiNewGame);
+        this.game.newGame(settings);
     }
 
     private onToggleMusicClicked(): void {
@@ -20,5 +75,15 @@ class UI {
             DOM.replaceClass(icon, 'fa-volume-off', 'fa-volume-up');
             this.game.startMusic();
         }
+    }
+
+    private showDialog(dialog: HTMLElement): void {
+        DOM.show(dialog);
+        setTimeout(() => DOM.addClass(dialog, 'show'), 10);
+    }
+
+    private hideDialog(dialog: HTMLElement): void {
+        DOM.onTransitionEnd(dialog, () => DOM.hide(dialog));
+        DOM.removeClass(dialog, 'show');        
     }
 }

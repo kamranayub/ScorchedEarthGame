@@ -150,6 +150,7 @@
     <Content Include="Scripts\Game\Game.ts" />
     <TypeScriptCompile Include="Scripts\Game\CollisionActor.ts" />
     <TypeScriptCompile Include="Scripts\Game\Explosion.ts" />
+    <TypeScriptCompile Include="Scripts\Game\GameSettings.ts" />
     <TypeScriptCompile Include="Scripts\Game\GraphicUtils.ts" />
     <TypeScriptCompile Include="Scripts\Game\Healthbar.ts" />
     <TypeScriptCompile Include="Scripts\Game\MonkeyPatch.ts" />
@@ -174,6 +175,12 @@
     </Content>
     <Content Include="Styles\Game.min.css">
       <DependentUpon>Game.less</DependentUpon>
+    </Content>
+    <Content Include="Styles\mixins.css">
+      <DependentUpon>mixins.less</DependentUpon>
+    </Content>
+    <Content Include="Styles\mixins.min.css">
+      <DependentUpon>mixins.less</DependentUpon>
     </Content>
     <Content Include="Textures\planet1.png" />
     <Content Include="Textures\planet2.png" />
@@ -231,6 +238,9 @@
     <Content Include="Styles\fonts\fontawesome-webfont.ttf" />
     <Content Include="Styles\fonts\fontawesome-webfont.woff" />
     <Content Include="Styles\fonts\FontAwesome.otf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Styles\mixins.less" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

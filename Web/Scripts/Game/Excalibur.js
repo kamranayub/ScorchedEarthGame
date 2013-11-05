@@ -2231,13 +2231,13 @@ var Engine = (function () {
         if (this.isFullscreen) {
             document.body.style.margin = '0px';
             document.body.style.overflow = 'hidden';
-            this.width = this.canvas.width = window.innerWidth;
-            this.height = this.canvas.height = window.innerHeight;
+            this.width = this.canvas.width = this.canvas.parentElement.clientWidth;
+            this.height = this.canvas.height = this.canvas.parentElement.clientHeight;
 
             window.addEventListener('resize', function (ev) {
                 _this.logger.log("View port resized", Log.DEBUG);
-                _this.width = _this.canvas.width = window.innerWidth;
-                _this.height = _this.canvas.height = window.innerHeight;
+                _this.width = _this.canvas.width = _this.canvas.parentElement.clientWidth;
+                _this.height = _this.canvas.height = _this.canvas.parentElement.clientHeight;
             });
         }
 
@@ -2295,7 +2295,7 @@ var Engine = (function () {
         });
 
         this.ctx = this.canvas.getContext('2d');
-        document.body.appendChild(this.canvas);
+        //document.body.appendChild(this.canvas);
     };
 
     Engine.prototype.isKeyDown = function (key) {

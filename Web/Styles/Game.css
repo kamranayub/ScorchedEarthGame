@@ -4,14 +4,24 @@
 body {
   font-family: Arial;
 }
+#game-content {
+  position: absolute;
+  top: 63px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
 /**
  * Header
  */
 header {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
   background: #1a1a1a;
   padding: 15px;
   border-bottom: 1px solid #2f2f2f;
-  overflow: auto;
+  height: 63px;
 }
 header .fa {
   color: white;
@@ -22,6 +32,7 @@ header h2 {
   color: #636363;
   font-size: 20px;
   text-transform: uppercase;
+  line-height: 2rem;
 }
 header h2 small {
   font-size: 0.5em;
@@ -32,4 +43,59 @@ header ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
+}
+header ul li {
+  float: left;
+  margin-left: 20px;
+}
+/**
+ * Dialogs
+ */
+.dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: 0.5s;
+}
+.dialog.show {
+  opacity: 1.0;
+}
+.dialog .dialog-inner {
+  position: relative;
+  left: -50%;
+  margin-top: -50%;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  padding: 20px;
+}
+/**
+ * Forms
+ */
+form label {
+  display: block;
+  color: white;
+  text-transform: uppercase;
+  font-weight: bold;
+  line-height: 1.4em;
+}
+form hr {
+  border-width: 0;
+  margin-top: 2em;
+}
+form button {
+  border-radius: 4px;
+  border: none;
+  background: #222;
+  color: #636363;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+form button.success {
+  background: #5cb85c;
+  color: white;
+}
+form button.success:hover {
+  background: #47a447;
 }

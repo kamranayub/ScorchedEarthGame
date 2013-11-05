@@ -19,12 +19,38 @@
             <h2>Iron Core <small>0.1-alpha</small></h2>
 
             <ul>
-                <li><a id="toggle-music" href="javascript:void(0)"><i class="fa fa-fw fa-2x fa-volume-up"></i></a></li>
+                <li><a id="new-game" href="javascript:void(0)" title="New Game"><i class="fa fa-fw fa-2x fa-undo"></i></a></li>
+                <li><a id="toggle-music" href="javascript:void(0)" title="Turn on/off music"><i class="fa fa-fw fa-2x fa-volume-up"></i></a></li>
             </ul>
-        </header>
+        </header>        
+
         <section id="game-content">
-              <canvas id="game"></canvas>
+            <canvas id="game"></canvas>
+
+            <section id="ui-new-game" class="dialog" style="display: none">
+                <div class="dialog-inner">
+                    <form>
+
+                        <label for="mapsize">Map Size:</label>
+                        <select id="mapsize" name="mapsize">
+                            <option value="0">Small (2-3 players)</option>
+                            <option value="1">Medium (3-6 players)</option>
+                            <option value="2">Large (6-10 players)</option>
+                            <option value="3">Huge (10-20 players)</option>
+                        </select>
+
+                        <hr>
+
+                        <label for="enemies">Number of Enemies:</label>
+                        <input id="enemies" type="number" value="2">
+
+                        <p><button type="submit" class="success">Start Game</button></p>
+                    </form>
+                </div>
+            </section>
         </section>
+
+        
         
         @Scripts.Render("~/_scripts/game")
         <script type="text/javascript">

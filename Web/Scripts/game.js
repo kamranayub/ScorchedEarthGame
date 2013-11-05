@@ -45,6 +45,19 @@ var Colors = {
     ExplosionBegin: Color.fromHex("#ddd32f"),
     ExplosionEnd: Color.fromHex("#c12713")
 };
+var GameSettings = (function () {
+    function GameSettings() {
+    }
+    return GameSettings;
+})();
+
+var MapSize;
+(function (MapSize) {
+    MapSize[MapSize["Small"] = 0] = "Small";
+    MapSize[MapSize["Medium"] = 1] = "Medium";
+    MapSize[MapSize["Large"] = 2] = "Large";
+    MapSize[MapSize["Huge"] = 3] = "Huge";
+})(MapSize || (MapSize = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -806,6 +819,14 @@ var DOM = (function () {
         return document.getElementById(id);
     };
 
+    DOM.idOf = /**
+    * Gets a DOM element by ID
+    * @param id The ID to search by
+    */
+    function (id) {
+        return document.getElementById(id);
+    };
+
     DOM.query = /**
     * Gets a single DOM element by a selector
     * @param selector The selector
@@ -816,6 +837,20 @@ var DOM = (function () {
         ctx = ctx || document;
 
         return ctx.querySelector(selector);
+    };
+
+    DOM.hide = /**
+    * Hides a DOM element
+    */
+    function (element) {
+        element.style.display = 'none';
+    };
+
+    DOM.show = /**
+    * Shows a DOM element
+    */
+    function (element) {
+        element.style.display = 'block';
     };
 
     DOM.toggleClass = /**
@@ -874,15 +909,91 @@ var DOM = (function () {
     function (element, cls) {
         element.classList.remove(cls);
     };
+
+    DOM.onAnimationEnd = function (element, done) {
+        var animationEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitAnimationEnd' : 'animationend';
+
+        var handler = function () {
+            element.removeEventListener(animationEndEvent, handler);
+
+            done();
+        };
+
+        element.addEventListener(animationEndEvent, handler);
+    };
+
+    DOM.onTransitionEnd = function (element, done) {
+        var transitionEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitTransitionEnd' : 'transitionend';
+
+        var handler = function () {
+            element.removeEventListener(transitionEndEvent, handler);
+
+            done();
+        };
+
+        element.addEventListener(transitionEndEvent, handler);
+    };
     return DOM;
 })();
 /// <reference path="DOM.ts" />
 var UI = (function () {
     function UI(game) {
         this.game = game;
+        this.uiGame = DOM.id('game');
+        this.uiNewGame = DOM.id('ui-new-game');
+        this.newGameBtn = DOM.id('new-game');
         this.toggleMusicBtn = DOM.id('toggle-music');
-        this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+
+        // init
+        this.init();
     }
+    UI.prototype.init = function () {
+        // add event listeners
+        this.newGameBtn.addEventListener('click', this.showNewGame.bind(this));
+        this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+        DOM.query('form', this.uiNewGame).addEventListener('submit', this.onNewGame.bind(this));
+
+        this.showNewGame();
+    };
+
+    UI.prototype.showNewGame = function () {
+        this.showDialog(this.uiNewGame);
+    };
+
+    UI.prototype.onNewGame = function (e) {
+        e.preventDefault();
+
+        var settings = new GameSettings();
+
+        var mapSizeElement = DOM.idOf('mapsize');
+        var enemyElement = DOM.idOf('enemies');
+        var enemies = parseInt(enemyElement.value, 10);
+
+        settings.mapSize = parseInt(mapSizeElement.value, 10);
+
+        switch (settings.mapSize) {
+            case MapSize.Small:
+                settings.enemies = Math.min(2, enemies);
+                break;
+            case MapSize.Medium:
+                settings.enemies = Math.min(5, enemies);
+                break;
+            case MapSize.Large:
+                settings.enemies = Math.min(9, enemies);
+                break;
+            case MapSize.Huge:
+                settings.enemies = Math.min(19, enemies);
+                break;
+            default:
+                alert('Map size is invalid');
+                return;
+                break;
+        }
+
+        this.hideDialog(this.uiNewGame);
+        this.game.newGame(settings);
+    };
+
     UI.prototype.onToggleMusicClicked = function () {
         var icon = DOM.query('i', this.toggleMusicBtn);
 
@@ -894,10 +1005,25 @@ var UI = (function () {
             this.game.startMusic();
         }
     };
+
+    UI.prototype.showDialog = function (dialog) {
+        DOM.show(dialog);
+        setTimeout(function () {
+            return DOM.addClass(dialog, 'show');
+        }, 10);
+    };
+
+    UI.prototype.hideDialog = function (dialog) {
+        DOM.onTransitionEnd(dialog, function () {
+            return DOM.hide(dialog);
+        });
+        DOM.removeClass(dialog, 'show');
+    };
     return UI;
 })();
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
+/// <reference path="GameSettings.ts" />
 /// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
@@ -909,7 +1035,6 @@ var Game = (function () {
     function Game() {
         var _this = this;
         this.game = new Engine(null, null, 'game');
-        this.ui = new UI(this);
 
         Patches.patchInCollisionMaps(this.game);
 
@@ -949,6 +1074,9 @@ var Game = (function () {
     };
 
     Game.prototype.init = function () {
+        // init UI
+        this.ui = new UI(this);
+
         // play bg music
         Resources.Global.musicAmbient1.sound.setLoop(true);
         Resources.Global.musicAmbient1.sound.setVolume(0.05);
@@ -960,9 +1088,25 @@ var Game = (function () {
         // create starfield
         var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
         this.game.addChild(starfield);
+    };
+
+    /**
+    * Starts a new game with the given settings
+    */
+    Game.prototype.newGame = function (settings) {
+        // reset
+        var children = this.game.currentScene.children.length, child;
+        for (var i = 0; i < children; i++) {
+            child = this.game.currentScene.children[i];
+
+            if (!(child instanceof Starfield)) {
+                this.game.currentScene.removeChild(child);
+            }
+        }
 
         // create map
         this.planets = [];
+
         for (var i = 0; i < Config.maxPlanets; i++) {
             this.planets.push(new Landmass());
             this.game.addChild(this.planets[i]);
@@ -1007,12 +1151,13 @@ var Game = (function () {
 
         this.game.addChild(playerTank);
 
-        // enemy tank
-        var enemyTank = new Tank(0, 0, Colors.Enemy);
+        for (var i = 0; i < settings.enemies; i++) {
+            var enemyTank = new Tank(0, 0, Colors.Enemy);
 
-        this.placeTank(enemyTank);
+            this.placeTank(enemyTank);
 
-        this.game.addChild(enemyTank);
+            this.game.addChild(enemyTank);
+        }
 
         // draw HUD
         var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
@@ -1022,6 +1167,14 @@ var Game = (function () {
             powerIndicator.text = "Power: " + playerTank.firepower;
         });
         this.game.addChild(powerIndicator);
+    };
+
+    Game.prototype.startMusic = function () {
+        Resources.Global.musicAmbient1.sound.play();
+    };
+
+    Game.prototype.stopMusic = function () {
+        Resources.Global.musicAmbient1.sound.stop();
     };
 
     Game.prototype.placeTank = function (tank) {
@@ -1043,14 +1196,6 @@ var Game = (function () {
                 tank.placeOn(randomPlanet, pos.point, pos.angle);
             }
         }
-    };
-
-    Game.prototype.startMusic = function () {
-        Resources.Global.musicAmbient1.sound.play();
-    };
-
-    Game.prototype.stopMusic = function () {
-        Resources.Global.musicAmbient1.sound.stop();
     };
     return Game;
 })();
