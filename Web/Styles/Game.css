@@ -1,8 +1,13 @@
 ﻿/**
  * Overall
  */
-body {
-  font-family: Arial;
+body,
+input,
+select,
+textarea,
+button {
+  font-family: 'Electrolize', Arial, Sans-Serif;
+  font-size: 16px;
 }
 #game-content {
   position: absolute;
@@ -31,10 +36,12 @@ header h2 {
   margin: 0;
   color: #636363;
   font-size: 20px;
+  font-family: 'Prosto One', Arial, Sans-Serif;
   text-transform: uppercase;
   line-height: 2rem;
 }
 header h2 small {
+  font-family: 'Electrolize', Arial, Sans-Serif;
   font-size: 0.5em;
   color: #fff;
 }
@@ -76,7 +83,7 @@ header ul li {
 form label {
   display: block;
   color: white;
-  text-transform: uppercase;
+  text-transform: lowercase;
   font-weight: bold;
   line-height: 1.4em;
 }

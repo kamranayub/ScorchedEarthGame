@@ -1,11 +1,13 @@
 ﻿@import "mixins";
+@import "variables";
 
 /**
  * Overall
  */
 
-body {
-    font-family: Arial;
+body, input, select, textarea, button {
+    font-family: @font-body;
+    font-size: 16px;
 }
 
 #game-content {
@@ -33,10 +35,11 @@ header {
         margin: 0;
         color: #636363; 
         font-size: 20px; 
+        font-family: @font-logo;
         text-transform: uppercase; 
         line-height: 2rem;
 
-        small { font-size: 0.5em; color: #fff; }
+        small { font-family: @font-body; font-size: 0.5em; color: #fff; }
     }
 
     ul {
@@ -90,7 +93,7 @@ form {
     label {
         display: block;
         color: white;
-        text-transform: uppercase;
+        text-transform: lowercase;
         font-weight: bold;
         line-height: 1.4em;
     }
