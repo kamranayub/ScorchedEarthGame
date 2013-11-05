@@ -71,6 +71,7 @@ var Game = (function () {
     * Starts a new game with the given settings
     */
     Game.prototype.newGame = function (settings) {
+        var _this = this;
         // reset
         var children = this.game.currentScene.children.length, child;
         for (var i = 0; i < children; i++) {
@@ -137,13 +138,11 @@ var Game = (function () {
         }
 
         // draw HUD
-        var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-        powerIndicator.color = Colors.Player;
-        powerIndicator.scale = 1.5;
-        powerIndicator.addEventListener('update', function () {
-            powerIndicator.text = "Power: " + playerTank.firepower;
+        this.ui.showHUD();
+
+        playerTank.addEventListener('update', function () {
+            _this.ui.updateFirepower(playerTank.firepower);
         });
-        this.game.addChild(powerIndicator);
     };
 
     Game.prototype.startMusic = function () {

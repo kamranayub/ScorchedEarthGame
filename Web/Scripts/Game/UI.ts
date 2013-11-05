@@ -7,12 +7,19 @@ class UI {
     private uiNewGame: HTMLElement;
     private uiGame: HTMLElement;
 
+    private hudTop: HTMLElement;
+    private hudPower: HTMLElement;
+
     constructor(private game: Game) {
         this.uiGame = DOM.id('game');
         this.uiNewGame = DOM.id('ui-new-game');
         this.newGameBtn = DOM.id('new-game');
         this.toggleMusicBtn = DOM.id('toggle-music');
-        
+
+        // hud
+        this.hudTop = DOM.id('game-hud-top');
+        this.hudPower = DOM.query('#game-hud-power span');
+
         // init
         this.init();
     }
@@ -75,6 +82,14 @@ class UI {
             DOM.replaceClass(icon, 'fa-volume-off', 'fa-volume-up');
             this.game.startMusic();
         }
+    }
+
+    public showHUD(): void {
+        DOM.show(this.hudTop);
+    }
+
+    public updateFirepower(power: number): void {
+        this.hudPower.innerText = power.toString();
     }
 
     private showDialog(dialog: HTMLElement): void {

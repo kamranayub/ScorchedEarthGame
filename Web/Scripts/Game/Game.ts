@@ -89,7 +89,7 @@ class Game {
             if (!(child instanceof Starfield)) {
                 this.game.currentScene.removeChild(child);
             }
-        }
+        }        
 
         // create map
         this.planets = [];
@@ -157,13 +157,11 @@ class Game {
         }
 
         // draw HUD
-        var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-        powerIndicator.color = Colors.Player;
-        powerIndicator.scale = 1.5;
-        powerIndicator.addEventListener('update', () => {
-            powerIndicator.text = "Power: " + playerTank.firepower;
+        this.ui.showHUD();
+
+        playerTank.addEventListener('update', () => {
+            this.ui.updateFirepower(playerTank.firepower);
         });
-        this.game.addChild(powerIndicator);
     }    
 
     public startMusic(): void {        

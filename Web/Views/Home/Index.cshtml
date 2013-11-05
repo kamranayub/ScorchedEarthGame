@@ -20,8 +20,6 @@
         <header>
             <h2>Iron Core <small>0.1-alpha</small></h2>
 
-
-
             <ul>
                 <li><a id="new-game" href="javascript:void(0)" title="New Game"><i class="fa fa-fw fa-2x fa-undo"></i></a></li>
                 <li><a id="toggle-music" href="javascript:void(0)" title="Turn on/off music"><i class="fa fa-fw fa-2x fa-volume-up"></i></a></li>
@@ -30,6 +28,15 @@
 
         <section id="game-content">
             <canvas id="game"></canvas>
+
+            <section id="game-hud-top" class="none">
+                <div>
+                    <div id="game-hud-power">
+                        <label>Power</label>
+                        <span></span>
+                    </div>
+                </div>
+            </section>
 
             <section id="ui-new-game" class="dialog" style="display: none">
                 <div class="dialog-inner">

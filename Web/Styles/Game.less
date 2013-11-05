@@ -10,6 +10,10 @@ body, input, select, textarea, button {
     font-size: 16px;
 }
 
+.none {
+    display: none;
+}
+
 #game-content {
     position: absolute;
     top: 63px;
@@ -84,6 +88,35 @@ header {
     // new game
     &#ui-new-game {
     }
+}
+
+/**
+ * HUD
+ */
+#game-hud-top {
+    position: absolute;    
+    left: 50%;
+    top: 0;
+    
+    > div {
+        position: relative;
+        left: -50%;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid #2f2f2f;
+        border-top: none;
+        padding: 10px 30px;
+    }
+
+    #game-hud-power {
+        color: white;       
+
+        span {
+            display: inline-block;
+            width: 40px;
+            color: #be2828;
+        }
+    }
+
 }
 
 /**
