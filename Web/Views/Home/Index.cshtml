@@ -9,20 +9,26 @@
 <html>
     <head>
         <title>Scorched Earth</title>
-        <style>
-            .planetCanvas {
-                border: 2px solid red;
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-        </style>
-    </head>
+        
+        @Styles.Render("~/_styles/game")
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Iron Core HTML5 game" />
+</head>
     <body>
-        <div>
+        <header>
+            <h2>Iron Core <small>0.1-alpha</small></h2>
+
+            <ul>
+                <li><a id="toggle-music" href="javascript:void(0)"><i class="fa fa-fw fa-2x fa-volume-up"></i></a></li>
+            </ul>
+        </header>
+        <section id="game-content">
               <canvas id="game"></canvas>
-        </div>
+        </section>
         
         @Scripts.Render("~/_scripts/game")
+        <script type="text/javascript">
+            window.game = new Game();
+        </script>
     </body>
 </html>

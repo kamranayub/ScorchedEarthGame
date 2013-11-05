@@ -2,18 +2,6 @@
 /// <reference path="GameConfig.ts" />
 /// <reference path="CollisionActor.ts" />
 
-class Point {
-
-    x: number;
-
-    y: number;
-
-    constructor(x: number, y: number) {
-        this.x = Math.floor(x);
-        this.y = Math.floor(y);
-    }
-}
-
 class Landmass extends CollisionActor {
 
     public radius: number;
@@ -53,7 +41,7 @@ class Landmass extends CollisionActor {
 
         return {
             angle: randomAngle,
-            point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
+            point: new Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
         };
     }
 
@@ -143,25 +131,25 @@ class Landmass extends CollisionActor {
         var canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d');
         
-        canvas.width = this.radius * 2 + 2;
-        canvas.height = this.radius * 2 + 2;        
+        canvas.width = this.radius * 2;
+        canvas.height = this.radius * 2;        
 
         if (color) {
             // draw arc
             ctx.beginPath();
             ctx.fillStyle = color.toString();
-            ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+            ctx.arc(this.radius, this.radius, this.radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.fill();
         } else {      
             var planetImages = [
-                Resources.Planet.planet1Image,
-                Resources.Planet.planet2Image,
-                Resources.Planet.planet3Image,
-                Resources.Planet.planet4Image
+                Resources.Planet.planet1Image.image,
+                Resources.Planet.planet2Image.image,
+                Resources.Planet.planet3Image.image,
+                Resources.Planet.planet4Image.image
             ];
 
-            ctx.drawImage(planetImages[Math.floor(Math.random() * planetImages.length)], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(planetImages[Math.round(Math.random() * (planetImages.length - 1))], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
         }
 
         return {

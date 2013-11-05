@@ -143,6 +143,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
+    <Content Include="Music\g33x-space-ambient.mp3" />
     <Content Include="Scripts\game.js" />
     <Content Include="Scripts\Game\Excalibur.js" />
     <Content Include="Scripts\Game\GameConfig.ts" />
@@ -161,6 +162,19 @@
     <Content Include="Sounds\Fire.wav" />
     <Content Include="Sounds\MoveBarrel.wav" />
     <Content Include="Spritesheets\SpriteFont.png" />
+    <Content Include="Styles\font-awesome\font-awesome.css">
+      <DependentUpon>font-awesome.less</DependentUpon>
+    </Content>
+    <Content Include="Styles\font-awesome\font-awesome.min.css">
+      <DependentUpon>font-awesome.less</DependentUpon>
+    </Content>
+    <Content Include="Styles\fonts\fontawesome-webfont.svg" />
+    <Content Include="Styles\Game.css">
+      <DependentUpon>Game.less</DependentUpon>
+    </Content>
+    <Content Include="Styles\Game.min.css">
+      <DependentUpon>Game.less</DependentUpon>
+    </Content>
     <Content Include="Textures\planet1.png" />
     <Content Include="Textures\planet2.png" />
     <Content Include="Textures\planet3.png" />
@@ -177,6 +191,8 @@
     <TypeScriptCompile Include="Scripts\Game\Projectiles\MissileProjectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Resources.ts" />
     <TypeScriptCompile Include="Scripts\Game\Starfield.ts" />
+    <TypeScriptCompile Include="Scripts\Game\UI.ts" />
+    <TypeScriptCompile Include="Scripts\Game\DOM.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -191,6 +207,30 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Scripts\game.js.map" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Styles\Game.less" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Styles\font-awesome\bordered-pulled.less" />
+    <Content Include="Styles\font-awesome\core.less" />
+    <Content Include="Styles\font-awesome\fixed-width.less" />
+    <Content Include="Styles\font-awesome\font-awesome.less" />
+    <Content Include="Styles\font-awesome\icons.less" />
+    <Content Include="Styles\font-awesome\larger.less" />
+    <Content Include="Styles\font-awesome\list.less" />
+    <Content Include="Styles\font-awesome\mixins.less" />
+    <Content Include="Styles\font-awesome\path.less" />
+    <Content Include="Styles\font-awesome\rotated-flipped.less" />
+    <Content Include="Styles\font-awesome\spinning.less" />
+    <Content Include="Styles\font-awesome\stacked.less" />
+    <Content Include="Styles\font-awesome\variables.less" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Styles\fonts\fontawesome-webfont.eot" />
+    <Content Include="Styles\fonts\fontawesome-webfont.ttf" />
+    <Content Include="Styles\fonts\fontawesome-webfont.woff" />
+    <Content Include="Styles\fonts\FontAwesome.otf" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

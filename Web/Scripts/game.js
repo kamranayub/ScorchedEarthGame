@@ -130,14 +130,6 @@ var CollisionActor = (function (_super) {
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="CollisionActor.ts" />
-var Point = (function () {
-    function Point(x, y) {
-        this.x = Math.floor(x);
-        this.y = Math.floor(y);
-    }
-    return Point;
-})();
-
 var Landmass = (function (_super) {
     __extends(Landmass, _super);
     function Landmass() {
@@ -172,7 +164,7 @@ var Landmass = (function (_super) {
 
         return {
             angle: randomAngle,
-            point: new Point(randomX + this.x + this.radius, randomY + this.y + this.radius)
+            point: new Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
         };
     };
 
@@ -253,25 +245,25 @@ var Landmass = (function (_super) {
     Landmass.prototype.generateCanvas = function (color) {
         var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
 
-        canvas.width = this.radius * 2 + 2;
-        canvas.height = this.radius * 2 + 2;
+        canvas.width = this.radius * 2;
+        canvas.height = this.radius * 2;
 
         if (color) {
             // draw arc
             ctx.beginPath();
             ctx.fillStyle = color.toString();
-            ctx.arc(this.radius + 1, this.radius + 1, this.radius, 0, Math.PI * 2);
+            ctx.arc(this.radius, this.radius, this.radius, 0, Math.PI * 2);
             ctx.closePath();
             ctx.fill();
         } else {
             var planetImages = [
-                Resources.Planet.planet1Image,
-                Resources.Planet.planet2Image,
-                Resources.Planet.planet3Image,
-                Resources.Planet.planet4Image
+                Resources.Planet.planet1Image.image,
+                Resources.Planet.planet2Image.image,
+                Resources.Planet.planet3Image.image,
+                Resources.Planet.planet4Image.image
             ];
 
-            ctx.drawImage(planetImages[Math.floor(Math.random() * planetImages.length)], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(planetImages[Math.round(Math.random() * (planetImages.length - 1))], 0, 0, 500, 500, 0, 0, canvas.width, canvas.height);
         }
 
         return {
@@ -290,7 +282,7 @@ var GraphicUtils = (function () {
     */
     function (pixels, color) {
         for (var i = 0; i < pixels.length; i += 4) {
-            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === color.a) {
+            if (pixels[i] === color.r && pixels[i + 1] === color.g && pixels[i + 2] === color.b && pixels[i + 3] === Math.floor(color.a * 255)) {
                 return true;
             }
         }
@@ -304,7 +296,7 @@ var Resources;
     var Global = (function () {
         function Global() {
         }
-        Global.sprintFont = new Drawing.SpriteFont("/Spritesheets/SpriteFont.png", '0123456789abcdefghijklmnopqrstuvwxyz,!\'&."?- ', true, 16, 3, 16, 16);
+        Global.musicAmbient1 = new PreloadedSound("/Music/g33x-space-ambient.mp3");
         return Global;
     })();
     Resources.Global = Global;
@@ -312,24 +304,28 @@ var Resources;
     var Tanks = (function () {
         function Tanks() {
         }
-        Tanks.dieSound = new Media.Sound("/Sounds/Die.wav");
-        Tanks.fireSound = new Media.Sound("/Sounds/Fire.wav");
-        Tanks.moveBarrelSound = new Media.Sound("/Sounds/MoveBarrel.wav");
+        Tanks.dieSound = new PreloadedSound("/Sounds/Die.wav");
+        Tanks.fireSound = new PreloadedSound("/Sounds/Fire.wav");
+        Tanks.moveBarrelSound = new PreloadedSound("/Sounds/MoveBarrel.wav");
         return Tanks;
     })();
     Resources.Tanks = Tanks;
 
+    var Explosions = (function () {
+        function Explosions() {
+        }
+        Explosions.smallExplosion = new PreloadedSound("/Sounds/Explosion-Small.wav");
+        return Explosions;
+    })();
+    Resources.Explosions = Explosions;
+
     var Planet = (function () {
         function Planet() {
-            Planet.planet1Image = new Image();
-            Planet.planet1Image.src = '/Textures/planet1.png';
-            Planet.planet2Image = new Image();
-            Planet.planet2Image.src = '/Textures/planet2.png';
-            Planet.planet3Image = new Image();
-            Planet.planet3Image.src = '/Textures/planet3.png';
-            Planet.planet4Image = new Image();
-            Planet.planet4Image.src = '/Textures/planet4.png';
         }
+        Planet.planet1Image = new PreloadedImage('/Textures/planet1.png');
+        Planet.planet2Image = new PreloadedImage('/Textures/planet2.png');
+        Planet.planet3Image = new PreloadedImage('/Textures/planet3.png');
+        Planet.planet4Image = new PreloadedImage('/Textures/planet4.png');
         return Planet;
     })();
     Resources.Planet = Planet;
@@ -455,7 +451,7 @@ var Healthbar = (function (_super) {
         var diffAngle = endAngle - startAngle;
 
         // background
-        ctx.strokeStyle = new Color(255, 255, 255, 0.8);
+        ctx.strokeStyle = new Color(255, 255, 255, 0.3).toString();
         ctx.beginPath();
         ctx.arc(this.x + this.getWidth() / 2, this.y, 25, startAngle, endAngle);
         ctx.lineWidth = 4;
@@ -504,7 +500,7 @@ var Projectiles;
             _super.prototype.onCollision.call(this, engine);
 
             // play sound
-            Missile._explodeSound.play();
+            Resources.Explosions.smallExplosion.sound.play();
 
             // play explosion animation
             var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5);
@@ -512,7 +508,6 @@ var Projectiles;
             // add explosion to engine
             engine.addChild(splosion);
         };
-        Missile._explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
         return Missile;
     })(Projectile);
     Projectiles.Missile = Missile;
@@ -626,23 +621,23 @@ var Tank = (function (_super) {
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
-        if (this.barrelAngle <= Math.PI)
+        if (this.barrelAngle <= Math.PI - (Math.PI / 7))
             return;
 
         this.barrelAngle -= angle * delta / 1000;
 
         // play sound
-        Resources.Tanks.moveBarrelSound.play();
+        Resources.Tanks.moveBarrelSound.sound.play();
     };
 
     Tank.prototype.moveBarrelRight = function (angle, delta) {
-        if (this.barrelAngle >= Math.PI * 2)
+        if (this.barrelAngle >= (Math.PI * 2) + (Math.PI / 7))
             return;
 
         this.barrelAngle += angle * delta / 1000;
 
         // play sound
-        Resources.Tanks.moveBarrelSound.play();
+        Resources.Tanks.moveBarrelSound.sound.play();
     };
 
     Tank.prototype.getProjectile = function () {
@@ -653,7 +648,7 @@ var Tank = (function (_super) {
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
 
         // Play sound
-        Resources.Tanks.fireSound.play();
+        Resources.Tanks.fireSound.sound.play();
 
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
@@ -682,7 +677,7 @@ var Tank = (function (_super) {
         engine.removeChild(this);
 
         // badass explode sound
-        Resources.Tanks.dieSound.play();
+        Resources.Tanks.dieSound.sound.play();
 
         for (var i = 0; i < 5; i++) {
             var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
@@ -800,6 +795,107 @@ var Patches;
     }
     Patches.patchInCollisionMaps = patchInCollisionMaps;
 })(Patches || (Patches = {}));
+var DOM = (function () {
+    function DOM() {
+    }
+    DOM.id = /**
+    * Gets a DOM element by ID
+    * @param id The ID to search by
+    */
+    function (id) {
+        return document.getElementById(id);
+    };
+
+    DOM.query = /**
+    * Gets a single DOM element by a selector
+    * @param selector The selector
+    * @param ctx A context to search from (default: null)
+    */
+    function (selector, ctx) {
+        if (typeof ctx === "undefined") { ctx = null; }
+        ctx = ctx || document;
+
+        return ctx.querySelector(selector);
+    };
+
+    DOM.toggleClass = /**
+    * Toggles a CSS class on an element
+    * @param element The DOM element to manipulate
+    * @param cls The CSS class to toggle
+    * @returns True if the class existed and false if not
+    */
+    function (element, cls) {
+        if (this.hasClass(element, cls)) {
+            this.removeClass(element, cls);
+            return true;
+        } else {
+            this.addClass(element, cls);
+            return false;
+        }
+    };
+
+    DOM.replaceClass = /**
+    * Replaces a CSS class on an element
+    * @param element The DOM element to manipulate
+    * @param search The CSS class to find
+    * @param replace The CSS class to replace with
+    */
+    function (element, search, replace) {
+        if (this.hasClass(element, search)) {
+            this.removeClass(element, search);
+            this.addClass(element, replace);
+        }
+    };
+
+    DOM.hasClass = /**
+    * Whether or not an element has a CSS class present
+    * @param element The DOM element to check
+    * @param cls The CSS class to check for
+    * @returns True if the class exists and false if not
+    */
+    function (element, cls) {
+        return element.classList.contains(cls);
+    };
+
+    DOM.addClass = /**
+    * Adds a CSS class to a DOM element
+    * @param element The DOM element to manipulate
+    * @param cls The CSS class to add
+    */
+    function (element, cls) {
+        element.classList.add(cls);
+    };
+
+    DOM.removeClass = /**
+    * Removes a CSS class to a DOM element
+    * @param element The DOM element to manipulate
+    * @param cls The CSS class to remove
+    */
+    function (element, cls) {
+        element.classList.remove(cls);
+    };
+    return DOM;
+})();
+/// <reference path="DOM.ts" />
+var UI = (function () {
+    function UI(game) {
+        this.game = game;
+        this.toggleMusicBtn = DOM.id('toggle-music');
+        this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+    }
+    UI.prototype.onToggleMusicClicked = function () {
+        var icon = DOM.query('i', this.toggleMusicBtn);
+
+        if (DOM.hasClass(icon, 'fa-volume-up')) {
+            DOM.replaceClass(icon, 'fa-volume-up', 'fa-volume-off');
+            this.game.stopMusic();
+        } else {
+            DOM.replaceClass(icon, 'fa-volume-off', 'fa-volume-up');
+            this.game.startMusic();
+        }
+    };
+    return UI;
+})();
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="Starfield.ts" />
@@ -808,79 +904,140 @@ var Patches;
 /// <reference path="Resources.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="MonkeyPatch.ts" />
-new Resources.Planet();
+/// <reference path="UI.ts" />
+var Game = (function () {
+    function Game() {
+        var _this = this;
+        this.game = new Engine(null, null, 'game');
+        this.ui = new UI(this);
 
-Resources.Planet.planet4Image.onload = main;
+        Patches.patchInCollisionMaps(this.game);
 
-function main() {
-    var game = new Engine(null, null, 'game');
+        // debug mode
+        // this.game.isDebug = true;
+        var loader = this.getLoader();
 
-    Patches.patchInCollisionMaps(game);
+        // load resources
+        this.game.load(loader);
 
-    //game.isDebug = true;
-    // Set background color
-    game.backgroundColor = Colors.Background;
+        // HACK: workaround until engine/loader exposes event
+        // oncomplete
+        var oldOnComplete = loader.oncomplete;
 
-    // create starfield
-    var starfield = new Starfield(game.canvas.width, game.canvas.height);
-    game.addChild(starfield);
+        loader.oncomplete = function () {
+            oldOnComplete.apply(loader, arguments);
 
-    // create map
-    var planets = [];
-    for (var i = 0; i < Config.maxPlanets; i++) {
-        planets.push(new Landmass());
-        game.addChild(planets[i]);
+            _this.init();
+        };
+
+        // start game
+        this.game.start();
     }
+    Game.prototype.getLoader = function () {
+        var loader = new Loader();
+        loader.addResource('mus-ambient1', Resources.Global.musicAmbient1);
+        loader.addResource('snd-die', Resources.Tanks.dieSound);
+        loader.addResource('snd-fire', Resources.Tanks.fireSound);
+        loader.addResource('snd-explode-small', Resources.Explosions.smallExplosion);
+        loader.addResource('snd-moveBarrel', Resources.Tanks.moveBarrelSound);
+        loader.addResource('img-planet1', Resources.Planet.planet1Image);
+        loader.addResource('img-planet2', Resources.Planet.planet2Image);
+        loader.addResource('img-planet3', Resources.Planet.planet3Image);
+        loader.addResource('img-planet4', Resources.Planet.planet4Image);
 
-    // position planets
-    var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+        return loader;
+    };
 
-    for (var i = 0; i < planets.length; i++) {
-        _planet = planets[i];
+    Game.prototype.init = function () {
+        // play bg music
+        Resources.Global.musicAmbient1.sound.setLoop(true);
+        Resources.Global.musicAmbient1.sound.setVolume(0.05);
+        this.startMusic();
 
-        var placed = false;
+        // Set background color
+        this.game.backgroundColor = Colors.Background;
 
-        while (!placed) {
-            _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
-            _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+        // create starfield
+        var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
+        this.game.addChild(starfield);
 
-            var intersecting = false;
+        // create map
+        this.planets = [];
+        for (var i = 0; i < Config.maxPlanets; i++) {
+            this.planets.push(new Landmass());
+            this.game.addChild(this.planets[i]);
+        }
 
-            for (var j = 0; j < planets.length; j++) {
-                if (i === j)
-                    continue;
+        // position planets
+        var _planet, planetGenMaxX = this.game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = this.game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
 
-                // use some maths to figure out if this planet touches the other
-                var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+        for (var i = 0; i < this.planets.length; i++) {
+            _planet = this.planets[i];
 
-                if (_planet.radius + otherPlanet.radius > distance) {
-                    intersecting = true;
-                    break;
+            var placed = false;
+
+            while (!placed) {
+                _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+                _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+
+                var intersecting = false;
+
+                for (var j = 0; j < this.planets.length; j++) {
+                    if (i === j)
+                        continue;
+
+                    // use some maths to figure out if this planet touches the other
+                    var otherPlanet = this.planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+
+                    if (_planet.radius + otherPlanet.radius > distance) {
+                        intersecting = true;
+                        break;
+                    }
+                }
+
+                if (!intersecting) {
+                    placed = true;
                 }
             }
-
-            if (!intersecting) {
-                placed = true;
-            }
         }
-    }
 
-    var placeTank = function (tank) {
-        // create player
+        var playerTank = new PlayerTank(0, 0);
+
+        this.placeTank(playerTank);
+
+        this.game.addChild(playerTank);
+
+        // enemy tank
+        var enemyTank = new Tank(0, 0, Colors.Enemy);
+
+        this.placeTank(enemyTank);
+
+        this.game.addChild(enemyTank);
+
+        // draw HUD
+        var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
+        powerIndicator.color = Colors.Player;
+        powerIndicator.scale = 1.5;
+        powerIndicator.addEventListener('update', function () {
+            powerIndicator.text = "Power: " + playerTank.firepower;
+        });
+        this.game.addChild(powerIndicator);
+    };
+
+    Game.prototype.placeTank = function (tank) {
+        var _this = this;
         var placed = false;
-        var randomPlanet = planets[Math.floor(Math.random() * planets.length)];
+        var randomPlanet = this.planets[Math.floor(Math.random() * this.planets.length)];
 
         while (!placed) {
             var pos = randomPlanet.getRandomPointOnBorder();
 
             var isInViewport = function () {
-                return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
+                return pos.point.x > 0 && pos.point.x < _this.game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < _this.game.canvas.height - tank.getHeight();
             };
 
             if (isInViewport()) {
                 placed = true;
-
-                console.log("Placing tank", pos);
 
                 // place player on edge of landmass
                 tank.placeOn(randomPlanet, pos.point, pos.angle);
@@ -888,29 +1045,13 @@ function main() {
         }
     };
 
-    var playerTank = new PlayerTank(0, 0);
+    Game.prototype.startMusic = function () {
+        Resources.Global.musicAmbient1.sound.play();
+    };
 
-    placeTank(playerTank);
-
-    game.addChild(playerTank);
-
-    // enemy tank
-    var enemyTank = new Tank(0, 0, Colors.Enemy);
-
-    placeTank(enemyTank);
-
-    game.addChild(enemyTank);
-
-    // draw HUD
-    var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-    powerIndicator.color = Colors.Player;
-    powerIndicator.scale = 1.5;
-    powerIndicator.addEventListener('update', function () {
-        powerIndicator.text = "Power: " + playerTank.firepower;
-    });
-    game.addChild(powerIndicator);
-
-    // run the mainloop
-    game.start();
-}
+    Game.prototype.stopMusic = function () {
+        Resources.Global.musicAmbient1.sound.stop();
+    };
+    return Game;
+})();
 //# sourceMappingURL=game.js.map

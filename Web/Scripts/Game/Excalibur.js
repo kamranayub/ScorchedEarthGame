@@ -1,5 +1,5 @@
 if (typeof window == 'undefined') {
-    var window = { audioContext: function () {
+    (window) = { audioContext: function () {
         } };
 }
 
@@ -9,8 +9,8 @@ if (typeof window != 'undefined' && !window.requestAnimationFrame) {
     };
 }
 
-if (typeof window != 'undefined' && !(window).audioContext) {
-    (window).audioContext = (window).webkitAudioContext;
+if (typeof window != 'undefined' && !(window).AudioContext) {
+    (window).AudioContext = (window).webkitAudioContext || (window).mozAudioContext;
 }
 /**
 Copyright (c) 2013 Erik Onarheim
@@ -41,17 +41,24 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-var Util = (function () {
-    function Util() {
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Point = (function () {
+    function Point(x, y) {
+        this.x = x;
+        this.y = y;
     }
-    Util.Equals = function (x, y, delta) {
-        return (((x - delta) <= y) && (y <= (x + delta)));
-    };
-    return Util;
+    return Point;
 })();
 
-var Vector = (function () {
+var Vector = (function (_super) {
+    __extends(Vector, _super);
     function Vector(x, y) {
+        _super.call(this, x, y);
         this.x = x;
         this.y = y;
     }
@@ -92,7 +99,7 @@ var Vector = (function () {
         return this.x * v.y - this.y * v.x;
     };
     return Vector;
-})();
+})(Point);
 /**
 Copyright (c) 2013 Erik Onarheim
 All rights reserved.
@@ -122,12 +129,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 /// <reference path="Core.ts" />
 /// <reference path="Algebra.ts" />
 var Overlap = (function () {
@@ -300,6 +301,10 @@ var Actor = (function () {
         return new Overlap(xover, yover);
     };
 
+    Actor.prototype.contains = function (x, y) {
+        return (this.x <= x && this.y <= y && this.getBottom() >= y && this.getRight() >= x);
+    };
+
     Actor.prototype.collides = function (box) {
         var w = 0.5 * (this.getWidth() + box.getWidth());
         var h = 0.5 * (this.getHeight() + box.getHeight());
@@ -399,6 +404,7 @@ var Actor = (function () {
     };
 
     Actor.prototype.update = function (engine, delta) {
+        var _this = this;
         this.sceneNode.update(engine, delta);
         var eventDispatcher = this.eventDispatcher;
 
@@ -412,10 +418,6 @@ var Actor = (function () {
         this.x += this.dx * delta / 1000;
         this.y += this.dy * delta / 1000;
 
-        //this.dx += this.ax * delta/1000;
-        //this.dy += this.ay * delta/1000;
-        //this.dx = 0;
-        //this.dy = 0;
         this.rotation += this.rx * delta / 1000;
 
         this.scale += this.sx * delta / 1000;
@@ -443,6 +445,20 @@ var Actor = (function () {
         // Publish other events
         engine.keys.forEach(function (key) {
             eventDispatcher.publish(Keys[key], new KeyEvent(this, key));
+        });
+
+        // Publish click events
+        engine.clicks.forEach(function (e) {
+            if (_this.contains(e.x, e.y)) {
+                eventDispatcher.publish(EventType[EventType.CLICK], new Click(e.x, e.y));
+                eventDispatcher.publish(EventType[EventType.MOUSEDOWN], new MouseDown(e.x, e.y));
+            }
+        });
+
+        engine.mouseUp.forEach(function (e) {
+            if (_this.contains(e.x, e.y)) {
+                eventDispatcher.publish(EventType[EventType.MOUSEUP], new MouseUp(e.x, e.y));
+            }
         });
 
         eventDispatcher.publish(EventType[EventType.UPDATE], new UpdateEvent(delta));
@@ -601,7 +617,7 @@ var MoveBy = (function () {
             this.start = new Vector(this.actor.x, this.actor.y);
             this.distance = this.start.distance(this.end);
             this.dir = this.end.minus(this.start).normalize();
-            this.speed = this.distance / (this.time);
+            this.speed = this.distance / (this.time / 1000);
         }
 
         var m = this.dir.scale(this.speed);
@@ -1093,7 +1109,7 @@ var EventType;
     EventType[EventType["KEYPRESS"] = 2] = "KEYPRESS";
     EventType[EventType["MOUSEDOWN"] = 3] = "MOUSEDOWN";
     EventType[EventType["MOUSEUP"] = 4] = "MOUSEUP";
-    EventType[EventType["MOUSECLICK"] = 5] = "MOUSECLICK";
+    EventType[EventType["CLICK"] = 5] = "CLICK";
     EventType[EventType["USEREVENT"] = 6] = "USEREVENT";
     EventType[EventType["COLLISION"] = 7] = "COLLISION";
     EventType[EventType["BLUR"] = 8] = "BLUR";
@@ -1164,6 +1180,36 @@ var KeyPress = (function (_super) {
     return KeyPress;
 })(ActorEvent);
 
+var MouseDown = (function (_super) {
+    __extends(MouseDown, _super);
+    function MouseDown(x, y) {
+        _super.call(this);
+        this.x = x;
+        this.y = y;
+    }
+    return MouseDown;
+})(ActorEvent);
+
+var MouseUp = (function (_super) {
+    __extends(MouseUp, _super);
+    function MouseUp(x, y) {
+        _super.call(this);
+        this.x = x;
+        this.y = y;
+    }
+    return MouseUp;
+})(ActorEvent);
+
+var Click = (function (_super) {
+    __extends(Click, _super);
+    function Click(x, y) {
+        _super.call(this);
+        this.x = x;
+        this.y = y;
+    }
+    return Click;
+})(ActorEvent);
+
 var EventDispatcher = (function () {
     function EventDispatcher(target) {
         this._handlers = {};
@@ -1173,7 +1219,7 @@ var EventDispatcher = (function () {
     }
     EventDispatcher.prototype.publish = function (eventName, event) {
         if (!eventName) {
-            this.log.log("Unmapped event", Log.WARN);
+            // key not mapped
             return;
         }
         eventName = eventName.toLowerCase();
@@ -1233,17 +1279,440 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+var Util;
+(function (Util) {
+    function base64Encode(inputStr) {
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var outputStr = "";
+        var i = 0;
+
+        while (i < inputStr.length) {
+            //all three "& 0xff" added below are there to fix a known bug
+            //with bytes returned by xhr.responseText
+            var byte1 = inputStr.charCodeAt(i++) & 0xff;
+            var byte2 = inputStr.charCodeAt(i++) & 0xff;
+            var byte3 = inputStr.charCodeAt(i++) & 0xff;
+
+            var enc1 = byte1 >> 2;
+            var enc2 = ((byte1 & 3) << 4) | (byte2 >> 4);
+
+            var enc3, enc4;
+            if (isNaN(byte2)) {
+                enc3 = enc4 = 64;
+            } else {
+                enc3 = ((byte2 & 15) << 2) | (byte3 >> 6);
+                if (isNaN(byte3)) {
+                    enc4 = 64;
+                } else {
+                    enc4 = byte3 & 63;
+                }
+            }
+
+            outputStr += b64.charAt(enc1) + b64.charAt(enc2) + b64.charAt(enc3) + b64.charAt(enc4);
+        }
+
+        return outputStr;
+    }
+    Util.base64Encode = base64Encode;
+})(Util || (Util = {}));
+/**
+Copyright (c) 2013 Erik Onarheim
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the ExcaliburJS Team.
+4. Neither the name of the creator nor the
+names of its contributors may be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+/// <reference path="MonkeyPatch.ts" />
+/// <reference path="Util.ts" />
+/// <reference path="Log.ts" />
+var Media;
+(function (Media) {
+    var Sound = (function () {
+        function Sound(path, volume) {
+            this.log = Logger.getInstance();
+            this.onload = function () {
+            };
+            this.onprogress = function () {
+            };
+            this.onerror = function () {
+            };
+            if ((window).AudioContext) {
+                this.log.log("Using new Web Audio Api for " + path, Log.DEBUG);
+                this.soundImpl = new WebAudio(path, volume);
+            } else {
+                this.log.log("Falling back to Audio Element for " + path, Log.WARN);
+                this.soundImpl = new AudioTag(path, volume);
+            }
+        }
+        Sound.prototype.setVolume = function (volume) {
+            this.soundImpl.setVolume(volume);
+        };
+
+        Sound.prototype.setLoop = function (loop) {
+            this.soundImpl.setLoop(loop);
+        };
+
+        Sound.prototype.load = function () {
+            this.soundImpl.onload = this.onload;
+            this.soundImpl.onprogress = this.onprogress;
+            this.soundImpl.onerror = this.onerror;
+            this.soundImpl.load();
+        };
+
+        Sound.prototype.play = function () {
+            this.soundImpl.play();
+        };
+
+        Sound.prototype.stop = function () {
+            this.soundImpl.stop();
+        };
+        return Sound;
+    })();
+    Media.Sound = Sound;
+
+    var AudioTag = (function () {
+        function AudioTag(soundPath, volume) {
+            this.soundPath = soundPath;
+            this.isLoaded = false;
+            this.onload = function () {
+            };
+            this.onprogress = function () {
+            };
+            this.onerror = function () {
+            };
+            this.audioElement = new Audio();
+
+            if (volume) {
+                this.audioElement.volume = volume;
+            } else {
+                this.audioElement.volume = 1.0;
+            }
+        }
+        AudioTag.prototype.audioLoaded = function () {
+            this.isLoaded = true;
+        };
+
+        AudioTag.prototype.setVolume = function (volume) {
+            this.audioElement.volume = volume;
+        };
+
+        AudioTag.prototype.setLoop = function (loop) {
+            this.audioElement.loop = loop;
+        };
+
+        AudioTag.prototype.load = function () {
+            var _this = this;
+            var request = new XMLHttpRequest();
+            request.open("GET", this.soundPath, true);
+            request.responseType = 'blob';
+            request.onprogress = this.onprogress;
+            request.onload = function (e) {
+                _this.audioElement.src = URL.createObjectURL(request.response);
+                _this.onload(e);
+            };
+            request.onerror = function (e) {
+                _this.onerror(e);
+            };
+            request.send();
+        };
+
+        AudioTag.prototype.play = function () {
+            this.audioElement.play();
+        };
+
+        AudioTag.prototype.stop = function () {
+            this.audioElement.pause();
+        };
+        return AudioTag;
+    })();
+
+    if ((window).AudioContext) {
+        var audioContext = new (window).AudioContext();
+    }
+
+    var WebAudio = (function () {
+        function WebAudio(soundPath, volume) {
+            this.context = audioContext;
+            this.volume = this.context.createGain();
+            this.buffer = null;
+            this.sound = null;
+            this.path = "";
+            this.isLoaded = false;
+            this.loop = false;
+            this.logger = Logger.getInstance();
+            this.onload = function () {
+            };
+            this.onprogress = function () {
+            };
+            this.onerror = function () {
+            };
+            this.path = soundPath;
+            if (volume) {
+                this.volume.gain.value = volume;
+            } else {
+                this.volume.gain.value = 1;
+            }
+        }
+        WebAudio.prototype.setVolume = function (volume) {
+            this.volume.gain.value = volume;
+        };
+
+        WebAudio.prototype.load = function () {
+            var _this = this;
+            var request = new XMLHttpRequest();
+            request.open('GET', this.path);
+            request.responseType = 'arraybuffer';
+            request.onprogress = this.onprogress;
+            request.onerror = this.onerror;
+            request.onload = function () {
+                _this.context.decodeAudioData(request.response, function (buffer) {
+                    _this.buffer = buffer;
+                    _this.isLoaded = true;
+                    _this.onload(_this);
+                }, function (e) {
+                    _this.logger.log("Unable to decode " + _this.path + " this browser may not fully support this format, or the file may be corrupt, " + "if this is an mp3 try removing id3 tags and album art from the file.", Log.ERROR);
+                    _this.isLoaded = false;
+                    _this.onload(_this);
+                });
+            };
+            try  {
+                request.send();
+            } catch (e) {
+                console.error("Error loading sound! If this is a cross origin error, you must host your sound with your html and javascript.");
+            }
+        };
+
+        WebAudio.prototype.setLoop = function (loop) {
+            this.loop = loop;
+        };
+
+        WebAudio.prototype.play = function () {
+            if (this.isLoaded) {
+                this.sound = this.context.createBufferSource();
+                this.sound.buffer = this.buffer;
+                this.sound.loop = this.loop;
+                this.sound.connect(this.volume);
+                this.volume.connect(this.context.destination);
+                this.sound.start(0);
+            }
+        };
+
+        WebAudio.prototype.stop = function () {
+            if (this.sound) {
+                this.sound.stop(0);
+            }
+        };
+        return WebAudio;
+    })();
+})(Media || (Media = {}));
+/**
+Copyright (c) 2013 Erik Onarheim
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the ExcaliburJS Team.
+4. Neither the name of the creator nor the
+names of its contributors may be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+var PreloadedImage = (function () {
+    function PreloadedImage(path) {
+        this.path = path;
+        this.logger = Logger.getInstance();
+        this.onprogress = function () {
+        };
+        this.oncomplete = function () {
+        };
+        this.onerror = function () {
+        };
+    }
+    PreloadedImage.prototype._start = function (e) {
+        this.logger.log("Started loading image " + this.path, Log.DEBUG);
+    };
+
+    PreloadedImage.prototype.begin = function (func) {
+        var _this = this;
+        this.image = new Image();
+        var request = new XMLHttpRequest();
+        request.open("GET", this.path, true);
+        request.responseType = "blob";
+        request.onloadstart = function (e) {
+            _this._start(e);
+        };
+        request.onprogress = this.onprogress;
+        request.onload = function (e) {
+            _this.image.src = URL.createObjectURL(request.response);
+            _this.oncomplete();
+        };
+        request.onerror = function (e) {
+            _this.onerror(e);
+        };
+        if (request.overrideMimeType) {
+            request.overrideMimeType('text/plain; charset=x-user-defined');
+        }
+        request.send();
+    };
+    return PreloadedImage;
+})();
+
+var PreloadedSound = (function () {
+    function PreloadedSound(path) {
+        this.path = path;
+        this.onprogress = function () {
+        };
+        this.oncomplete = function () {
+        };
+        this.onerror = function () {
+        };
+        this.sound = new Media.Sound(path, 1.0);
+    }
+    PreloadedSound.prototype.begin = function () {
+        this.sound.onprogress = this.onprogress;
+        this.sound.onload = this.oncomplete;
+        this.sound.onerror = this.onerror;
+        this.sound.load();
+    };
+    return PreloadedSound;
+})();
+
+var Loader = (function () {
+    function Loader() {
+        this.resources = {};
+        this.resourceList = [];
+        this.index = 0;
+        this.resourceCount = 0;
+        this.numLoaded = 0;
+        this.progressCounts = {};
+        this.totalCounts = {};
+        this.onprogress = function () {
+        };
+        this.oncomplete = function () {
+        };
+        this.onerror = function () {
+        };
+    }
+    Loader.prototype.addResource = function (key, loadable) {
+        this.resources[key] = this.index++;
+        this.resourceList.push(loadable);
+        this.progressCounts[key] = 0;
+        this.totalCounts[key] = 1;
+        this.resourceCount++;
+    };
+
+    Loader.prototype.getResource = function (key) {
+        return this.resourceList[this.resources[key]];
+    };
+
+    Loader.prototype.sumCounts = function (obj) {
+        var sum = 0;
+        for (var i in obj) {
+            sum += obj[i] | 0;
+        }
+        return sum;
+    };
+
+    Loader.prototype.begin = function () {
+        var me = this;
+        this.resourceList.forEach(function (r, i) {
+            r.onprogress = function (e) {
+                var total = e.total;
+                var progress = e.loaded;
+                me.progressCounts[i] = progress;
+                me.totalCounts[i] = total;
+                me.onprogress.call(me, { loaded: me.sumCounts(me.progressCounts), total: me.sumCounts(me.totalCounts) });
+            };
+            r.oncomplete = function () {
+                me.numLoaded++;
+                if (me.numLoaded === me.resourceCount) {
+                    me.oncomplete.call(me);
+                }
+            };
+            r.begin();
+        });
+    };
+    return Loader;
+})();
+/**
+Copyright (c) 2013 Erik Onarheim
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the ExcaliburJS Team.
+4. Neither the name of the creator nor the
+names of its contributors may be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 /// <reference path="Core.ts" />
+/// <reference path="Loader.ts" />
 var Drawing;
 (function (Drawing) {
     var SpriteSheet = (function () {
-        function SpriteSheet(path, columns, rows, spWidth, spHeight) {
-            this.path = path;
+        function SpriteSheet(image, columns, rows, spWidth, spHeight) {
+            this.image = image;
             this.columns = columns;
             this.rows = rows;
             this.sprites = [];
-            this.internalImage = new Image();
-            this.internalImage.src = path;
+            this.internalImage = image.image;
             this.sprites = new Array(columns * rows);
 
             // TODO: Inspect actual image dimensions with preloading
@@ -1258,7 +1727,7 @@ var Drawing;
             var j = 0;
             for (i = 0; i < rows; i++) {
                 for (j = 0; j < columns; j++) {
-                    this.sprites[j + i * columns] = new Sprite(this.internalImage, j * spWidth, i * spHeight, spWidth, spHeight);
+                    this.sprites[j + i * columns] = new Sprite(this.image, j * spWidth, i * spHeight, spWidth, spHeight);
                 }
             }
         }
@@ -1289,9 +1758,9 @@ var Drawing;
 
     var SpriteFont = (function (_super) {
         __extends(SpriteFont, _super);
-        function SpriteFont(path, alphabet, caseInsensitive, columns, rows, spWidth, spHeight) {
-            _super.call(this, path, columns, rows, spWidth, spHeight);
-            this.path = path;
+        function SpriteFont(image, alphabet, caseInsensitive, columns, rows, spWidth, spHeight) {
+            _super.call(this, image, columns, rows, spWidth, spHeight);
+            this.image = image;
             this.alphabet = alphabet;
             this.caseInsensitive = caseInsensitive;
             this.spriteLookup = {};
@@ -1331,7 +1800,7 @@ var Drawing;
             this.sheight = sheight;
             this.scale = 1.0;
             this.rotation = 0.0;
-            this.internalImage = image;
+            this.internalImage = image.image;
         }
         Sprite.prototype.setRotation = function (radians) {
             this.rotation = radians;
@@ -1477,197 +1946,49 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /// <reference path="Core.ts" />
 /// <reference path="Common.ts" />
+/// <reference path="Algebra.ts" />
 var Camera;
 (function (Camera) {
     var SideCamera = (function () {
-        function SideCamera() {
+        function SideCamera(engine) {
+            this.engine = engine;
         }
         SideCamera.prototype.setActorToFollow = function (actor) {
             this.follow = actor;
         };
 
-        SideCamera.prototype.applyTransform = function (engine, delta) {
-            engine.ctx.translate(-this.follow.x + engine.width / 2.0, 0);
+        SideCamera.prototype.getFocus = function () {
+            return new Point(-this.follow.x + this.engine.width / 2.0, 0);
+        };
+
+        SideCamera.prototype.applyTransform = function (delta) {
+            var focus = this.getFocus();
+            this.engine.ctx.translate(focus.x, focus.y);
         };
         return SideCamera;
     })();
     Camera.SideCamera = SideCamera;
 
     var TopCamera = (function () {
-        function TopCamera() {
+        function TopCamera(engine) {
+            this.engine = engine;
         }
         TopCamera.prototype.setActorToFollow = function (actor) {
             this.follow = actor;
         };
 
-        TopCamera.prototype.applyTransform = function (engine, delta) {
-            engine.ctx.translate(-this.follow.x + engine.width / 2.0, 0);
-            engine.ctx.translate(0, -this.follow.y + engine.height / 2.0);
+        TopCamera.prototype.getFocus = function () {
+            return new Point(-this.follow.x + this.engine.width / 2.0, -this.follow.y + this.engine.height / 2.0);
+        };
+
+        TopCamera.prototype.applyTransform = function (delta) {
+            var focus = this.getFocus();
+            this.engine.ctx.translate(focus.x, focus.y);
         };
         return TopCamera;
     })();
     Camera.TopCamera = TopCamera;
 })(Camera || (Camera = {}));
-/**
-Copyright (c) 2013 Erik Onarheim
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-1. Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
-3. All advertising materials mentioning features or use of this software
-must display the following acknowledgement:
-This product includes software developed by the ExcaliburJS Team.
-4. Neither the name of the creator nor the
-names of its contributors may be used to endorse or promote products
-derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
-EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-/// <reference path="MonkeyPatch.ts" />
-/// <reference path="Log.ts" />
-var Media;
-(function (Media) {
-    var Sound = (function () {
-        function Sound(path, volume) {
-            this.log = Logger.getInstance();
-            if ((window).audioContext) {
-                this.log.log("Using new Web Audio Api for " + path);
-                this.soundImpl = new WebAudio(path, volume);
-            } else {
-                this.log.log("Falling back to Audio ELement for " + path, Log.WARN);
-                this.soundImpl = new AudioTag(path, volume);
-            }
-        }
-        Sound.prototype.setVolume = function (volume) {
-            this.soundImpl.setVolume(volume);
-        };
-
-        Sound.prototype.setLoop = function (loop) {
-            this.soundImpl.setLoop(loop);
-        };
-
-        Sound.prototype.play = function () {
-            this.soundImpl.play();
-        };
-
-        Sound.prototype.stop = function () {
-            this.soundImpl.stop();
-        };
-        return Sound;
-    })();
-    Media.Sound = Sound;
-
-    var AudioTag = (function () {
-        function AudioTag(soundPath, volume) {
-            this.isLoaded = false;
-            this.audioElement = new Audio();
-            this.audioElement.src = soundPath;
-            if (volume) {
-                this.audioElement.volume = volume;
-            } else {
-                this.audioElement.volume = 1.0;
-            }
-        }
-        AudioTag.prototype.audioLoaded = function () {
-            this.isLoaded = true;
-        };
-
-        AudioTag.prototype.setVolume = function (volume) {
-            this.audioElement.volume = volume;
-        };
-
-        AudioTag.prototype.setLoop = function (loop) {
-            this.audioElement.loop = loop;
-        };
-
-        AudioTag.prototype.play = function () {
-            this.audioElement.play();
-        };
-
-        AudioTag.prototype.stop = function () {
-            this.audioElement.pause();
-        };
-        return AudioTag;
-    })();
-    var audioContext = new (window).audioContext();
-
-    var WebAudio = (function () {
-        function WebAudio(soundPath, volume) {
-            this.context = audioContext;
-            this.volume = this.context.createGain();
-            this.buffer = null;
-            this.sound = null;
-            this.path = "";
-            this.isLoaded = false;
-            this.loop = false;
-            this.path = soundPath;
-            if (volume) {
-                this.volume.gain.value = volume;
-            } else {
-                this.volume.gain.value = 1;
-            }
-
-            this.load();
-        }
-        WebAudio.prototype.setVolume = function (volume) {
-            this.volume.gain.value = volume;
-        };
-
-        WebAudio.prototype.load = function () {
-            var _this = this;
-            var request = new XMLHttpRequest();
-            request.open('GET', this.path);
-            request.responseType = 'arraybuffer';
-            request.onload = function () {
-                _this.context.decodeAudioData(request.response, function (buffer) {
-                    _this.buffer = buffer;
-                    _this.isLoaded = true;
-                });
-            };
-            try  {
-                request.send();
-            } catch (e) {
-                console.error("Error loading sound! If this is a cross origin error, you must host your sound with your html and javascript.");
-            }
-        };
-
-        WebAudio.prototype.setLoop = function (loop) {
-            this.loop = loop;
-        };
-
-        WebAudio.prototype.play = function () {
-            if (this.isLoaded) {
-                this.sound = this.context.createBufferSource();
-                this.sound.buffer = this.buffer;
-                this.sound.loop = this.loop;
-                this.sound.connect(this.volume);
-                this.volume.connect(this.context.destination);
-                this.sound.noteOn(0);
-            }
-        };
-
-        WebAudio.prototype.stop = function () {
-            if (this.sound) {
-                this.sound.noteOff(0);
-            }
-        };
-        return WebAudio;
-    })();
-})(Media || (Media = {}));
 /**
 Copyright (c) 2013 Erik Onarheim
 All rights reserved.
@@ -1707,13 +2028,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /// <reference path="Camera.ts" />
 /// <reference path="Common.ts" />
 /// <reference path="Sound.ts" />
+/// <reference path="Loader.ts" />
 var Color = (function () {
     function Color(r, g, b, a) {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
-        this.a = (a != null ? a : 255);
+        this.a = (a != null ? a : 1);
     }
     Color.fromRGB = function (r, g, b, a) {
         return new Color(r, g, b, a);
@@ -1727,9 +2049,9 @@ var Color = (function () {
             var r = parseInt(match[1], 16);
             var g = parseInt(match[2], 16);
             var b = parseInt(match[3], 16);
-            var a = 255;
+            var a = 1;
             if (match[4]) {
-                a = parseInt(match[4], 16);
+                a = parseInt(match[4], 16) / 255;
             }
             return new Color(r, g, b, a);
         } else {
@@ -1744,6 +2066,8 @@ var Color = (function () {
         }
         return "rgb(" + result + ")";
     };
+    Color.Black = Color.fromHex('#000000');
+    Color.White = Color.fromHex('#FFFFFF');
     Color.Yellow = Color.fromHex('#00FFFF');
     Color.Orange = Color.fromHex('#FFA500');
     Color.Red = Color.fromHex('#FF0000');
@@ -1822,15 +2146,23 @@ var AnimationNode = (function () {
 var Engine = (function () {
     function Engine(width, height, canvasElementId) {
         this.hasStarted = false;
+        // Key Events
         this.keys = [];
         this.keysDown = [];
         this.keysUp = [];
+        // Mouse Events
+        this.clicks = [];
+        this.mouseDown = [];
+        this.mouseUp = [];
         this.animations = [];
         //public camera : ICamera;
         this.isFullscreen = false;
         this.isDebug = false;
         this.debugColor = new Color(255, 255, 255);
         this.backgroundColor = new Color(0, 0, 100);
+        this.isLoading = false;
+        this.progress = 0;
+        this.total = 1;
         this.logger = Logger.getInstance();
         this.logger.addAppender(new ConsoleAppender());
         this.logger.log("Building engine...", Log.DEBUG);
@@ -1853,6 +2185,8 @@ var Engine = (function () {
             this.logger.log("Engine viewport is fullscreen", Log.DEBUG);
             this.isFullscreen = true;
         }
+
+        this.loader = new Loader();
 
         this.init();
     }
@@ -1880,6 +2214,18 @@ var Engine = (function () {
         return this.height;
     };
 
+    Engine.prototype.transformToCanvasCoordinates = function (x, y) {
+        var newX = Math.floor(x * this.canvas.width / this.canvas.clientWidth);
+        var newY = Math.floor(y * this.canvas.height / this.canvas.clientHeight);
+
+        if (this.camera) {
+            var focus = this.camera.getFocus();
+            newX -= focus.x;
+            newY -= focus.y;
+        }
+        return new Point(newX, newY);
+    };
+
     Engine.prototype.init = function () {
         var _this = this;
         if (this.isFullscreen) {
@@ -1899,6 +2245,7 @@ var Engine = (function () {
             _this.keys.length = 0;
         });
 
+        // key up is on window because canvas cannot have focus
         window.addEventListener('keyup', function (ev) {
             var key = _this.keys.indexOf(ev.keyCode);
             _this.keys.splice(key, 1);
@@ -1908,6 +2255,7 @@ var Engine = (function () {
             _this.currentScene.publish(EventType[EventType.KEYUP], keyEvent);
         });
 
+        // key down is on window because canvas cannot have focus
         window.addEventListener('keydown', function (ev) {
             if (_this.keys.indexOf(ev.keyCode) === -1) {
                 _this.keys.push(ev.keyCode);
@@ -1918,16 +2266,6 @@ var Engine = (function () {
             }
         });
 
-        window.addEventListener('mousedown', function () {
-            // TODO: Collect events
-            _this.eventDispatcher.update();
-        });
-
-        window.addEventListener('mouseup', function () {
-            // TODO: Collect events
-            _this.eventDispatcher.update();
-        });
-
         window.addEventListener('blur', function () {
             _this.eventDispatcher.publish(EventType[EventType.BLUR]);
             _this.eventDispatcher.update();
@@ -1936,6 +2274,24 @@ var Engine = (function () {
         window.addEventListener('focus', function () {
             _this.eventDispatcher.publish(EventType[EventType.FOCUS]);
             _this.eventDispatcher.update();
+        });
+
+        this.canvas.addEventListener('mousedown', function (e) {
+            var x = e.pageX - _this.canvas.offsetLeft;
+            var y = e.pageY - _this.canvas.offsetTop;
+            var transformedPoint = _this.transformToCanvasCoordinates(x, y);
+            var mousedown = new MouseDown(transformedPoint.x, transformedPoint.y);
+            _this.clicks.push(mousedown);
+            _this.eventDispatcher.publish(EventType[EventType.MOUSEDOWN], mousedown);
+        });
+
+        this.canvas.addEventListener('mouseup', function (e) {
+            var x = e.pageX - _this.canvas.offsetLeft;
+            var y = e.pageY - _this.canvas.offsetTop;
+            var transformedPoint = _this.transformToCanvasCoordinates(x, y);
+            var mouseup = new MouseUp(transformedPoint.x, transformedPoint.y);
+            _this.mouseUp.push(mouseup);
+            _this.eventDispatcher.publish(EventType[EventType.MOUSEUP], mouseup);
         });
 
         this.ctx = this.canvas.getContext('2d');
@@ -1955,6 +2311,11 @@ var Engine = (function () {
     };
 
     Engine.prototype.update = function (delta) {
+        if (this.isLoading) {
+            // suspend updates untill loading is finished
+            return;
+        }
+
         this.eventDispatcher.update();
         this.currentScene.update(this, delta);
 
@@ -1971,10 +2332,23 @@ var Engine = (function () {
         // Reset keysDown and keysUp after update is complete
         this.keysDown.length = 0;
         this.keysUp.length = 0;
+
+        // Reset clicks
+        this.clicks.length = 0;
     };
 
     Engine.prototype.draw = function (delta) {
         var ctx = this.ctx;
+
+        if (this.isLoading) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, this.width, this.height);
+            this.drawLoadingBar(ctx, this.progress, this.total);
+
+            // Drawing nothing else while loading
+            return;
+        }
+
         ctx.clearRect(0, 0, this.width, this.height);
         ctx.fillStyle = this.backgroundColor.toString();
         ctx.fillRect(0, 0, this.width, this.height);
@@ -1993,7 +2367,7 @@ var Engine = (function () {
         this.ctx.save();
 
         if (this.camera) {
-            this.camera.applyTransform(this, delta);
+            this.camera.applyTransform(delta);
         }
 
         this.currentScene.draw(this.ctx, delta);
@@ -2046,6 +2420,49 @@ var Engine = (function () {
             this.hasStarted = false;
             this.logger.log("Game stopped", Log.DEBUG);
         }
+    };
+
+    Engine.prototype.drawLoadingBar = function (ctx, loaded, total) {
+        if (this.loadingDraw) {
+            this.loadingDraw(ctx, loaded, total);
+            return;
+        }
+
+        var y = this.canvas.height / 2;
+        var width = this.canvas.width / 3;
+        var x = width;
+
+        // loading box
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, 20);
+
+        var progress = width * (loaded / total);
+        ctx.fillStyle = 'white';
+        var margin = 5;
+        var width = progress - margin * 2;
+        var height = 20 - margin * 2;
+        ctx.fillRect(x + margin, y + margin, width > 0 ? width : 0, height);
+    };
+
+    Engine.prototype.setLoadingDrawFunction = function (fcn) {
+        this.loadingDraw = fcn;
+    };
+
+    Engine.prototype.load = function (loader) {
+        var _this = this;
+        this.isLoading = true;
+        loader.begin();
+        loader.onprogress = function (e) {
+            _this.progress = e.loaded;
+            _this.total = e.total;
+            _this.logger.log('Loading ' + (100 * _this.progress / _this.total).toFixed(0));
+        };
+        loader.oncomplete = function () {
+            setTimeout(function () {
+                _this.isLoading = false;
+            }, 500);
+        };
     };
     return Engine;
 })();

@@ -17,7 +17,7 @@ class Healthbar extends Actor {
         var diffAngle = endAngle - startAngle;
 
         // background
-        ctx.strokeStyle = new Color(255, 255, 255, 0.8);
+        ctx.strokeStyle = new Color(255, 255, 255, 0.3).toString();
         ctx.beginPath();
         ctx.arc(this.x + this.getWidth() / 2, this.y, 25, startAngle, endAngle);
         ctx.lineWidth = 4;

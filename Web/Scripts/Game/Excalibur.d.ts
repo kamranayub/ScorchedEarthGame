@@ -27,10 +27,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-declare class Util {
-    static Equals(x: number, y: number, delta: number): boolean;
+declare class Point {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
 }
-declare class Vector {
+declare class Vector extends Point {
     public x: number;
     public y: number;
     constructor(x: number, y: number);
@@ -103,6 +105,7 @@ declare class Actor {
     public getTop(): number;
     public getBottom(): number;
     private getOverlap(box);
+    public contains(x: number, y: number): boolean;
     public collides(box: Actor): Side;
     public within(actor: Actor, distance: number): boolean;
     public addDrawing(key: any, drawing: Drawing.IDrawable): void;
@@ -352,7 +355,7 @@ declare enum EventType {
     KEYPRESS,
     MOUSEDOWN,
     MOUSEUP,
-    MOUSECLICK,
+    CLICK,
     USEREVENT,
     COLLISION,
     BLUR,
@@ -389,6 +392,21 @@ declare class KeyPress extends ActorEvent {
     public key: Keys;
     constructor(key: Keys);
 }
+declare class MouseDown extends ActorEvent {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
+}
+declare class MouseUp extends ActorEvent {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
+}
+declare class Click extends ActorEvent {
+    public x: number;
+    public y: number;
+    constructor(x: number, y: number);
+}
 declare class EventDispatcher {
     private _handlers;
     private queue;
@@ -399,6 +417,111 @@ declare class EventDispatcher {
     public subscribe(eventName: string, handler: (event?: ActorEvent) => void): void;
     public update(): void;
 }
+/**
+Copyright (c) 2013 Erik Onarheim
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+3. All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+This product includes software developed by the ExcaliburJS Team.
+4. Neither the name of the creator nor the
+names of its contributors may be used to endorse or promote products
+derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE EXCALIBURJS TEAM ''AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE EXCALIBURJS TEAM BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+declare module Util {
+    function base64Encode(inputStr: string): string;
+}
+declare module Media {
+    interface ISound {
+        setVolume(volume: number);
+        setLoop(loop: boolean);
+        play();
+        stop();
+        load();
+        onload: (e: any) => void;
+        onprogress: (e: any) => void;
+        onerror: (e: any) => void;
+    }
+    class Sound implements ISound {
+        private soundImpl;
+        private log;
+        constructor(path: string, volume?: number);
+        public setVolume(volume: number): void;
+        public setLoop(loop: boolean): void;
+        public onload: (e: any) => void;
+        public onprogress: (e: any) => void;
+        public onerror: (e: any) => void;
+        public load(): void;
+        public play(): void;
+        public stop(): void;
+    }
+}
+interface ILoadable {
+    begin(func?: (e: any) => void);
+    onprogress: (e: any) => void;
+    oncomplete: () => void;
+    onerror: (e: any) => void;
+}
+declare class PreloadedImage implements ILoadable {
+    public path: string;
+    public width: number;
+    public height: number;
+    public image: HTMLImageElement;
+    private logger;
+    private progressCallback;
+    private doneCallback;
+    private errorCallback;
+    constructor(path: string);
+    private _start(e);
+    public begin(func?: (e: any) => void): void;
+    public onprogress: (e: any) => void;
+    public oncomplete: () => void;
+    public onerror: (e: any) => void;
+}
+declare class PreloadedSound implements ILoadable {
+    public path: string;
+    public onprogress: (e: any) => void;
+    public oncomplete: () => void;
+    public onerror: (e: any) => void;
+    public sound: Media.Sound;
+    constructor(path: string);
+    public begin(): void;
+}
+declare class Loader implements ILoadable {
+    private resources;
+    private resourceList;
+    private index;
+    private resourceCount;
+    private numLoaded;
+    private progressCounts;
+    private totalCounts;
+    constructor();
+    public addResource(key: string, loadable: ILoadable): void;
+    public getResource(key: string): ILoadable;
+    private sumCounts(obj);
+    public begin(): void;
+    public onprogress: (e: any) => void;
+    public oncomplete: () => void;
+    public onerror: () => void;
+}
 declare module Drawing {
     interface IDrawable {
         setScale(scale: number);
@@ -407,23 +530,23 @@ declare module Drawing {
         draw(ctx: CanvasRenderingContext2D, x: number, y: number);
     }
     class SpriteSheet {
-        public path: string;
+        public image: PreloadedImage;
         private columns;
         private rows;
         public sprites: Sprite[];
         private internalImage;
-        constructor(path: string, columns: number, rows: number, spWidth: number, spHeight: number);
+        constructor(image: PreloadedImage, columns: number, rows: number, spWidth: number, spHeight: number);
         public getAnimationByIndices(engine: Engine, indices: number[], speed: number): Animation;
         public getAnimationBetween(engine: Engine, beginIndex: number, endIndex: number, speed: number): Animation;
         public getAnimationForAll(engine: Engine, speed: number): Animation;
         public getSprite(index: number): Sprite;
     }
     class SpriteFont extends SpriteSheet {
-        public path: string;
+        public image: PreloadedImage;
         private alphabet;
         private caseInsensitive;
         private spriteLookup;
-        constructor(path: string, alphabet: string, caseInsensitive: boolean, columns: number, rows: number, spWidth: number, spHeight: number);
+        constructor(image: PreloadedImage, alphabet: string, caseInsensitive: boolean, columns: number, rows: number, spWidth: number, spHeight: number);
         public draw(ctx: CanvasRenderingContext2D, x: number, y: number, text: string): void;
     }
     class Sprite implements IDrawable {
@@ -434,7 +557,7 @@ declare module Drawing {
         private internalImage;
         private scale;
         private rotation;
-        constructor(image: HTMLImageElement, sx: number, sy: number, swidth: number, sheight: number);
+        constructor(image: PreloadedImage, sx: number, sy: number, swidth: number, sheight: number);
         public setRotation(radians: number): void;
         public setScale(scale: number): void;
         public reset(): void;
@@ -582,36 +705,24 @@ declare module Common {
 }
 declare module Camera {
     interface ICamera {
-        applyTransform(engine: Engine, delta: number): void;
+        getFocus(): Point;
+        applyTransform(delta: number): void;
     }
     class SideCamera implements ICamera {
         public follow: Actor;
-        constructor();
+        public engine: Engine;
+        constructor(engine: Engine);
         public setActorToFollow(actor: Actor): void;
-        public applyTransform(engine: Engine, delta: number): void;
+        public getFocus(): Point;
+        public applyTransform(delta: number): void;
     }
     class TopCamera implements ICamera {
         public follow: Actor;
-        constructor();
+        public engine: Engine;
+        constructor(engine: Engine);
         public setActorToFollow(actor: Actor): void;
-        public applyTransform(engine: Engine, delta: number): void;
-    }
-}
-declare module Media {
-    interface ISound {
-        setVolume(volume: number);
-        setLoop(loop: boolean);
-        play();
-        stop();
-    }
-    class Sound implements ISound {
-        private soundImpl;
-        private log;
-        constructor(path: string, volume?: number);
-        public setVolume(volume: number): void;
-        public setLoop(loop: boolean): void;
-        public play(): void;
-        public stop(): void;
+        public getFocus(): Point;
+        public applyTransform(delta: number): void;
     }
 }
 declare class Color {
@@ -619,6 +730,8 @@ declare class Color {
     public g: number;
     public b: number;
     public a: number;
+    static Black: Color;
+    static White: Color;
     static Yellow: Color;
     static Orange: Color;
     static Red: Color;
@@ -701,6 +814,9 @@ declare class Engine {
     public keys: number[];
     public keysDown: number[];
     public keysUp: number[];
+    public clicks: MouseDown[];
+    public mouseDown: MouseDown[];
+    public mouseUp: MouseUp[];
     public camera: Camera.ICamera;
     public currentScene: SceneNode;
     public rootScene: SceneNode;
@@ -710,6 +826,11 @@ declare class Engine {
     public debugColor: Color;
     public backgroundColor: Color;
     private logger;
+    private loader;
+    private isLoading;
+    private progress;
+    private total;
+    private loadingDraw;
     constructor(width?: number, height?: number, canvasElementId?: string);
     public addEventListener(eventName: string, handler: (event?: ActorEvent) => void): void;
     public playAnimation(animation: Drawing.Animation, x: number, y: number): void;
@@ -717,6 +838,7 @@ declare class Engine {
     public removeChild(actor: Actor): void;
     public getWidth(): number;
     public getHeight(): number;
+    private transformToCanvasCoordinates(x, y);
     private init();
     public isKeyDown(key: Keys): boolean;
     public isKeyPressed(key: Keys): boolean;
@@ -725,4 +847,7 @@ declare class Engine {
     private draw(delta);
     public start(): void;
     public stop(): void;
+    private drawLoadingBar(ctx, loaded, total);
+    public setLoadingDrawFunction(fcn: (ctx: CanvasRenderingContext2D, loaded: number, total: number) => void): void;
+    public load(loader: ILoadable): void;
 }

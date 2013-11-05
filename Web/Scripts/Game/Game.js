@@ -6,79 +6,140 @@
 /// <reference path="Resources.ts" />
 /// <reference path="CollisionActor.ts" />
 /// <reference path="MonkeyPatch.ts" />
-new Resources.Planet();
+/// <reference path="UI.ts" />
+var Game = (function () {
+    function Game() {
+        var _this = this;
+        this.game = new Engine(null, null, 'game');
+        this.ui = new UI(this);
 
-Resources.Planet.planet4Image.onload = main;
+        Patches.patchInCollisionMaps(this.game);
 
-function main() {
-    var game = new Engine(null, null, 'game');
+        // debug mode
+        // this.game.isDebug = true;
+        var loader = this.getLoader();
 
-    Patches.patchInCollisionMaps(game);
+        // load resources
+        this.game.load(loader);
 
-    //game.isDebug = true;
-    // Set background color
-    game.backgroundColor = Colors.Background;
+        // HACK: workaround until engine/loader exposes event
+        // oncomplete
+        var oldOnComplete = loader.oncomplete;
 
-    // create starfield
-    var starfield = new Starfield(game.canvas.width, game.canvas.height);
-    game.addChild(starfield);
+        loader.oncomplete = function () {
+            oldOnComplete.apply(loader, arguments);
 
-    // create map
-    var planets = [];
-    for (var i = 0; i < Config.maxPlanets; i++) {
-        planets.push(new Landmass());
-        game.addChild(planets[i]);
+            _this.init();
+        };
+
+        // start game
+        this.game.start();
     }
+    Game.prototype.getLoader = function () {
+        var loader = new Loader();
+        loader.addResource('mus-ambient1', Resources.Global.musicAmbient1);
+        loader.addResource('snd-die', Resources.Tanks.dieSound);
+        loader.addResource('snd-fire', Resources.Tanks.fireSound);
+        loader.addResource('snd-explode-small', Resources.Explosions.smallExplosion);
+        loader.addResource('snd-moveBarrel', Resources.Tanks.moveBarrelSound);
+        loader.addResource('img-planet1', Resources.Planet.planet1Image);
+        loader.addResource('img-planet2', Resources.Planet.planet2Image);
+        loader.addResource('img-planet3', Resources.Planet.planet3Image);
+        loader.addResource('img-planet4', Resources.Planet.planet4Image);
 
-    // position planets
-    var _planet, planetGenMaxX = game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+        return loader;
+    };
 
-    for (var i = 0; i < planets.length; i++) {
-        _planet = planets[i];
+    Game.prototype.init = function () {
+        // play bg music
+        Resources.Global.musicAmbient1.sound.setLoop(true);
+        Resources.Global.musicAmbient1.sound.setVolume(0.05);
+        this.startMusic();
 
-        var placed = false;
+        // Set background color
+        this.game.backgroundColor = Colors.Background;
 
-        while (!placed) {
-            _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
-            _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+        // create starfield
+        var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
+        this.game.addChild(starfield);
 
-            var intersecting = false;
+        // create map
+        this.planets = [];
+        for (var i = 0; i < Config.maxPlanets; i++) {
+            this.planets.push(new Landmass());
+            this.game.addChild(this.planets[i]);
+        }
 
-            for (var j = 0; j < planets.length; j++) {
-                if (i === j)
-                    continue;
+        // position planets
+        var _planet, planetGenMaxX = this.game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = this.game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
 
-                // use some maths to figure out if this planet touches the other
-                var otherPlanet = planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+        for (var i = 0; i < this.planets.length; i++) {
+            _planet = this.planets[i];
 
-                if (_planet.radius + otherPlanet.radius > distance) {
-                    intersecting = true;
-                    break;
+            var placed = false;
+
+            while (!placed) {
+                _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
+                _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
+
+                var intersecting = false;
+
+                for (var j = 0; j < this.planets.length; j++) {
+                    if (i === j)
+                        continue;
+
+                    // use some maths to figure out if this planet touches the other
+                    var otherPlanet = this.planets[j], oc = otherPlanet.getCenter(), mc = _planet.getCenter(), distance = Math.sqrt(Math.pow((mc.x - oc.x), 2) + Math.pow((mc.y - oc.y), 2));
+
+                    if (_planet.radius + otherPlanet.radius > distance) {
+                        intersecting = true;
+                        break;
+                    }
+                }
+
+                if (!intersecting) {
+                    placed = true;
                 }
             }
-
-            if (!intersecting) {
-                placed = true;
-            }
         }
-    }
 
-    var placeTank = function (tank) {
-        // create player
+        var playerTank = new PlayerTank(0, 0);
+
+        this.placeTank(playerTank);
+
+        this.game.addChild(playerTank);
+
+        // enemy tank
+        var enemyTank = new Tank(0, 0, Colors.Enemy);
+
+        this.placeTank(enemyTank);
+
+        this.game.addChild(enemyTank);
+
+        // draw HUD
+        var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
+        powerIndicator.color = Colors.Player;
+        powerIndicator.scale = 1.5;
+        powerIndicator.addEventListener('update', function () {
+            powerIndicator.text = "Power: " + playerTank.firepower;
+        });
+        this.game.addChild(powerIndicator);
+    };
+
+    Game.prototype.placeTank = function (tank) {
+        var _this = this;
         var placed = false;
-        var randomPlanet = planets[Math.floor(Math.random() * planets.length)];
+        var randomPlanet = this.planets[Math.floor(Math.random() * this.planets.length)];
 
         while (!placed) {
             var pos = randomPlanet.getRandomPointOnBorder();
 
             var isInViewport = function () {
-                return pos.point.x > 0 && pos.point.x < game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < game.canvas.height - tank.getHeight();
+                return pos.point.x > 0 && pos.point.x < _this.game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < _this.game.canvas.height - tank.getHeight();
             };
 
             if (isInViewport()) {
                 placed = true;
-
-                console.log("Placing tank", pos);
 
                 // place player on edge of landmass
                 tank.placeOn(randomPlanet, pos.point, pos.angle);
@@ -86,28 +147,12 @@ function main() {
         }
     };
 
-    var playerTank = new PlayerTank(0, 0);
+    Game.prototype.startMusic = function () {
+        Resources.Global.musicAmbient1.sound.play();
+    };
 
-    placeTank(playerTank);
-
-    game.addChild(playerTank);
-
-    // enemy tank
-    var enemyTank = new Tank(0, 0, Colors.Enemy);
-
-    placeTank(enemyTank);
-
-    game.addChild(enemyTank);
-
-    // draw HUD
-    var powerIndicator = new Label("Power: " + playerTank.firepower, 10, 20);
-    powerIndicator.color = Colors.Player;
-    powerIndicator.scale = 1.5;
-    powerIndicator.addEventListener('update', function () {
-        powerIndicator.text = "Power: " + playerTank.firepower;
-    });
-    game.addChild(powerIndicator);
-
-    // run the mainloop
-    game.start();
-}
+    Game.prototype.stopMusic = function () {
+        Resources.Global.musicAmbient1.sound.stop();
+    };
+    return Game;
+})();

@@ -11,7 +11,7 @@ class GraphicUtils {
             if (pixels[i] === color.r &&
                 pixels[i + 1] === color.g &&
                 pixels[i + 2] === color.b &&
-                pixels[i + 3] === color.a) {
+                pixels[i + 3] === Math.floor(color.a * 255)) {
                 return true;
             }
         }

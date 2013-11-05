@@ -1,4 +1,4 @@
-﻿/// <reference path="Excalibur.d.ts" />
+/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GraphicUtils.ts" />
 /// <reference path="Resources.ts" />
@@ -86,23 +86,23 @@ var Tank = (function (_super) {
     };
 
     Tank.prototype.moveBarrelLeft = function (angle, delta) {
-        if (this.barrelAngle <= Math.PI)
+        if (this.barrelAngle <= Math.PI - (Math.PI / 7))
             return;
 
         this.barrelAngle -= angle * delta / 1000;
 
         // play sound
-        Resources.Tanks.moveBarrelSound.play();
+        Resources.Tanks.moveBarrelSound.sound.play();
     };
 
     Tank.prototype.moveBarrelRight = function (angle, delta) {
-        if (this.barrelAngle >= Math.PI * 2)
+        if (this.barrelAngle >= (Math.PI * 2) + (Math.PI / 7))
             return;
 
         this.barrelAngle += angle * delta / 1000;
 
         // play sound
-        Resources.Tanks.moveBarrelSound.play();
+        Resources.Tanks.moveBarrelSound.sound.play();
     };
 
     Tank.prototype.getProjectile = function () {
@@ -113,7 +113,7 @@ var Tank = (function (_super) {
         var barrelY = Config.barrelHeight * Math.sin(this.barrelAngle + this.angle + (Math.PI / 2)) + centerY;
 
         // Play sound
-        Resources.Tanks.fireSound.play();
+        Resources.Tanks.fireSound.sound.play();
 
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
@@ -142,7 +142,7 @@ var Tank = (function (_super) {
         engine.removeChild(this);
 
         // badass explode sound
-        Resources.Tanks.dieSound.play();
+        Resources.Tanks.dieSound.sound.play();
 
         for (var i = 0; i < 5; i++) {
             var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
