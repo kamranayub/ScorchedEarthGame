@@ -941,8 +941,9 @@ var UI = (function () {
         this.game = game;
         this.uiGame = DOM.id('game');
         this.uiNewGame = DOM.id('ui-new-game');
-        this.newGameBtn = DOM.id('new-game');
-        this.toggleMusicBtn = DOM.id('toggle-music');
+        this.btnToolbarNewGame = DOM.id('toolbar-new-game');
+        this.btnToolbarToggleMusic = DOM.id('toolbar-toggle-music');
+        this.btnStartGame = DOM.id('btn-start-game');
 
         // hud
         this.hudTop = DOM.id('game-hud-top');
@@ -953,8 +954,8 @@ var UI = (function () {
     }
     UI.prototype.init = function () {
         // add event listeners
-        this.newGameBtn.addEventListener('click', this.showNewGame.bind(this));
-        this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+        this.btnToolbarNewGame.addEventListener('click', this.showNewGame.bind(this));
+        this.btnToolbarToggleMusic.addEventListener('click', this.onToggleMusicClicked.bind(this));
         DOM.query('form', this.uiNewGame).addEventListener('submit', this.onNewGame.bind(this));
 
         this.showNewGame();
@@ -994,12 +995,13 @@ var UI = (function () {
                 break;
         }
 
+        this.btnStartGame.blur();
         this.hideDialog(this.uiNewGame);
         this.game.newGame(settings);
     };
 
     UI.prototype.onToggleMusicClicked = function () {
-        var icon = DOM.query('i', this.toggleMusicBtn);
+        var icon = DOM.query('i', this.btnToolbarToggleMusic);
 
         if (DOM.hasClass(icon, 'fa-volume-up')) {
             DOM.replaceClass(icon, 'fa-volume-up', 'fa-volume-off');

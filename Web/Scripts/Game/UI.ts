@@ -2,10 +2,11 @@
 
 class UI {
 
-    private newGameBtn: HTMLElement;
-    private toggleMusicBtn: HTMLElement;
+    private btnToolbarNewGame: HTMLElement;
+    private btnToolbarToggleMusic: HTMLElement;
     private uiNewGame: HTMLElement;
     private uiGame: HTMLElement;
+    private btnStartGame: HTMLElement;
 
     private hudTop: HTMLElement;
     private hudPower: HTMLElement;
@@ -13,8 +14,9 @@ class UI {
     constructor(private game: Game) {
         this.uiGame = DOM.id('game');
         this.uiNewGame = DOM.id('ui-new-game');
-        this.newGameBtn = DOM.id('new-game');
-        this.toggleMusicBtn = DOM.id('toggle-music');
+        this.btnToolbarNewGame = DOM.id('toolbar-new-game');        
+        this.btnToolbarToggleMusic = DOM.id('toolbar-toggle-music');
+        this.btnStartGame = DOM.id('btn-start-game');
 
         // hud
         this.hudTop = DOM.id('game-hud-top');
@@ -27,8 +29,8 @@ class UI {
     private init(): void {
         
         // add event listeners
-        this.newGameBtn.addEventListener('click', this.showNewGame.bind(this));
-        this.toggleMusicBtn.addEventListener('click', this.onToggleMusicClicked.bind(this));
+        this.btnToolbarNewGame.addEventListener('click', this.showNewGame.bind(this));
+        this.btnToolbarToggleMusic.addEventListener('click', this.onToggleMusicClicked.bind(this));
         DOM.query('form', this.uiNewGame).addEventListener('submit', this.onNewGame.bind(this));
 
         this.showNewGame();
@@ -68,12 +70,13 @@ class UI {
                 break;
         } 
 
-        this.hideDialog(this.uiNewGame);
-        this.game.newGame(settings);
+        this.btnStartGame.blur();
+        this.hideDialog(this.uiNewGame);        
+        this.game.newGame(settings);        
     }
 
     private onToggleMusicClicked(): void {
-        var icon = DOM.query('i', this.toggleMusicBtn);
+        var icon = DOM.query('i', this.btnToolbarToggleMusic);
 
         if (DOM.hasClass(icon, 'fa-volume-up')) {
             DOM.replaceClass(icon, 'fa-volume-up', 'fa-volume-off');
