@@ -93,8 +93,8 @@ class Game {
         this.engine.backgroundColor = Colors.Background;
 
         // create starfield
-        var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
-        this.engine.addChild(starfield);        
+        //var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
+        //this.engine.addChild(starfield);        
     }
 
     /**

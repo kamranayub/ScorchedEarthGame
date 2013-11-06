@@ -125,8 +125,8 @@ var SmallMapConfiguration = (function () {
 var MediumMapConfiguration = (function () {
     function MediumMapConfiguration() {
         this.maxPlanets = 15;
-        this.planetMinRadius = 130;
-        this.planetMaxRadius = 500;
+        this.planetMinRadius = 50;
+        this.planetMaxRadius = 200;
         this.width = 3072;
         this.height = 3072;
     }
@@ -136,8 +136,8 @@ var MediumMapConfiguration = (function () {
 var LargeMapConfiguration = (function () {
     function LargeMapConfiguration() {
         this.maxPlanets = 20;
-        this.planetMinRadius = 130;
-        this.planetMaxRadius = 500;
+        this.planetMinRadius = 50;
+        this.planetMaxRadius = 200;
         this.width = 4608;
         this.height = 4608;
     }
@@ -147,8 +147,8 @@ var LargeMapConfiguration = (function () {
 var HugeMapConfiguration = (function () {
     function HugeMapConfiguration() {
         this.maxPlanets = 30;
-        this.planetMinRadius = 130;
-        this.planetMaxRadius = 500;
+        this.planetMinRadius = 50;
+        this.planetMaxRadius = 200;
         this.width = 13824;
         this.height = 13824;
     }
@@ -1249,10 +1249,9 @@ var Game = (function () {
 
         // Set background color
         this.engine.backgroundColor = Colors.Background;
-
         // create starfield
-        var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
-        this.engine.addChild(starfield);
+        //var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
+        //this.engine.addChild(starfield);
     };
 
     /**

@@ -47,9 +47,9 @@ class MediumMapConfiguration implements IMapConfiguration {
 
     public maxPlanets: number = 15;
 
-    public planetMinRadius: number = 130;
+    public planetMinRadius: number = 50;
 
-    public planetMaxRadius: number = 500;
+    public planetMaxRadius: number = 200;
 
     public width: number = 3072;
 
@@ -60,9 +60,9 @@ class LargeMapConfiguration implements IMapConfiguration {
 
     public maxPlanets: number = 20;
 
-    public planetMinRadius: number = 130;
+    public planetMinRadius: number = 50;
 
-    public planetMaxRadius: number = 500;
+    public planetMaxRadius: number = 200;
 
     public width: number = 4608;
 
@@ -73,9 +73,9 @@ class HugeMapConfiguration implements IMapConfiguration {
 
     public maxPlanets: number = 30;
 
-    public planetMinRadius: number = 130;
+    public planetMinRadius: number = 50;
 
-    public planetMaxRadius: number = 500;
+    public planetMaxRadius: number = 200;
 
     public width: number = 13824;
 
