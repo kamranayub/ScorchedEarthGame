@@ -18,12 +18,12 @@ class CollisionActor extends Actor implements ICollidable {
 
     public isHit(engine: Engine, x: number, y: number): boolean {
         var collisionCanvas = document.createElement("canvas");
-        collisionCanvas.width = engine.canvas.width;
-        collisionCanvas.height = engine.canvas.height;
+        collisionCanvas.width = Game.current.mapConfig.width;
+        collisionCanvas.height = Game.current.mapConfig.height;
 
         var collisionCtx = collisionCanvas.getContext('2d');
         collisionCtx.fillStyle = 'white';
-        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+        collisionCtx.fillRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
 
         this.drawCollisionMap(collisionCtx, 0);
 

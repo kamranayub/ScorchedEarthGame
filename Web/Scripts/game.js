@@ -1,4 +1,43 @@
-﻿/// <reference path="Excalibur.d.ts" />
+﻿var Resources;
+(function (Resources) {
+    var Global = (function () {
+        function Global() {
+        }
+        Global.musicAmbient1 = new PreloadedSound("/Music/g33x-space-ambient.mp3");
+        return Global;
+    })();
+    Resources.Global = Global;
+
+    var Tanks = (function () {
+        function Tanks() {
+        }
+        Tanks.dieSound = new PreloadedSound("/Sounds/Die.wav");
+        Tanks.fireSound = new PreloadedSound("/Sounds/Fire.wav");
+        Tanks.moveBarrelSound = new PreloadedSound("/Sounds/MoveBarrel.wav");
+        return Tanks;
+    })();
+    Resources.Tanks = Tanks;
+
+    var Explosions = (function () {
+        function Explosions() {
+        }
+        Explosions.smallExplosion = new PreloadedSound("/Sounds/Explosion-Small.wav");
+        return Explosions;
+    })();
+    Resources.Explosions = Explosions;
+
+    var Planet = (function () {
+        function Planet() {
+        }
+        Planet.planet1Image = new PreloadedImage('/Textures/planet1.png');
+        Planet.planet2Image = new PreloadedImage('/Textures/planet2.png');
+        Planet.planet3Image = new PreloadedImage('/Textures/planet3.png');
+        Planet.planet4Image = new PreloadedImage('/Textures/planet4.png');
+        return Planet;
+    })();
+    Resources.Planet = Planet;
+})(Resources || (Resources = {}));
+/// <reference path="Excalibur.d.ts" />
 var Config = {
     // width of tanks
     tankWidth: 32,
@@ -24,12 +63,6 @@ var Config = {
     bulletSpeedModifier: 0.003,
     // Gravity constant
     gravity: 6,
-    // Minimum planet radius
-    planetMinRadius: 35,
-    // Maximum planet radius
-    planetMaxRadius: 200,
-    // # of planets to generate
-    maxPlanets: 8,
     // amount of distance from canvas edges to spawn planets
     planetGenerationPadding: 120
 };
@@ -58,6 +91,69 @@ var MapSize;
     MapSize[MapSize["Large"] = 2] = "Large";
     MapSize[MapSize["Huge"] = 3] = "Huge";
 })(MapSize || (MapSize = {}));
+var MapConfigurationFactory = (function () {
+    function MapConfigurationFactory() {
+    }
+    MapConfigurationFactory.getMapConfiguration = function (mapSize) {
+        switch (mapSize) {
+            case MapSize.Small:
+                return new SmallMapConfiguration();
+            case MapSize.Medium:
+                return new MediumMapConfiguration();
+            case MapSize.Large:
+                return new LargeMapConfiguration();
+            case MapSize.Huge:
+                return new HugeMapConfiguration();
+            default:
+                throw new Error("Could not find configuration for that map size");
+        }
+    };
+    return MapConfigurationFactory;
+})();
+
+var SmallMapConfiguration = (function () {
+    function SmallMapConfiguration() {
+        this.maxPlanets = 8;
+        this.planetMinRadius = 35;
+        this.planetMaxRadius = 150;
+        this.width = 2048;
+        this.height = 2048;
+    }
+    return SmallMapConfiguration;
+})();
+
+var MediumMapConfiguration = (function () {
+    function MediumMapConfiguration() {
+        this.maxPlanets = 15;
+        this.planetMinRadius = 130;
+        this.planetMaxRadius = 500;
+        this.width = 3072;
+        this.height = 3072;
+    }
+    return MediumMapConfiguration;
+})();
+
+var LargeMapConfiguration = (function () {
+    function LargeMapConfiguration() {
+        this.maxPlanets = 20;
+        this.planetMinRadius = 130;
+        this.planetMaxRadius = 500;
+        this.width = 4608;
+        this.height = 4608;
+    }
+    return LargeMapConfiguration;
+})();
+
+var HugeMapConfiguration = (function () {
+    function HugeMapConfiguration() {
+        this.maxPlanets = 30;
+        this.planetMinRadius = 130;
+        this.planetMaxRadius = 500;
+        this.width = 13824;
+        this.height = 13824;
+    }
+    return HugeMapConfiguration;
+})();
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -119,12 +215,12 @@ var CollisionActor = (function (_super) {
 
     CollisionActor.prototype.isHit = function (engine, x, y) {
         var collisionCanvas = document.createElement("canvas");
-        collisionCanvas.width = engine.canvas.width;
-        collisionCanvas.height = engine.canvas.height;
+        collisionCanvas.width = Game.current.mapConfig.width;
+        collisionCanvas.height = Game.current.mapConfig.height;
 
         var collisionCtx = collisionCanvas.getContext('2d');
         collisionCtx.fillStyle = 'white';
-        collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+        collisionCtx.fillRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
 
         this.drawCollisionMap(collisionCtx, 0);
 
@@ -145,8 +241,9 @@ var CollisionActor = (function (_super) {
 /// <reference path="CollisionActor.ts" />
 var Landmass = (function (_super) {
     __extends(Landmass, _super);
-    function Landmass() {
+    function Landmass(mapConfig) {
         _super.call(this, 0, 0, null, null, Colors.Land);
+        this.mapConfig = mapConfig;
         // clamp velocities because > 2 is too much
         // max x velocity
         this.xm = 1.8;
@@ -238,7 +335,7 @@ var Landmass = (function (_super) {
 
     Landmass.prototype.generate = function () {
         // get a random radius to use
-        this.radius = Math.random() * (Config.planetMaxRadius - Config.planetMinRadius) + Config.planetMinRadius;
+        this.radius = Math.random() * (this.mapConfig.planetMaxRadius - this.mapConfig.planetMinRadius) + this.mapConfig.planetMinRadius;
 
         this.setWidth(this.radius * 2);
         this.setHeight(this.radius * 2);
@@ -304,45 +401,6 @@ var GraphicUtils = (function () {
     };
     return GraphicUtils;
 })();
-var Resources;
-(function (Resources) {
-    var Global = (function () {
-        function Global() {
-        }
-        Global.musicAmbient1 = new PreloadedSound("/Music/g33x-space-ambient.mp3");
-        return Global;
-    })();
-    Resources.Global = Global;
-
-    var Tanks = (function () {
-        function Tanks() {
-        }
-        Tanks.dieSound = new PreloadedSound("/Sounds/Die.wav");
-        Tanks.fireSound = new PreloadedSound("/Sounds/Fire.wav");
-        Tanks.moveBarrelSound = new PreloadedSound("/Sounds/MoveBarrel.wav");
-        return Tanks;
-    })();
-    Resources.Tanks = Tanks;
-
-    var Explosions = (function () {
-        function Explosions() {
-        }
-        Explosions.smallExplosion = new PreloadedSound("/Sounds/Explosion-Small.wav");
-        return Explosions;
-    })();
-    Resources.Explosions = Explosions;
-
-    var Planet = (function () {
-        function Planet() {
-        }
-        Planet.planet1Image = new PreloadedImage('/Textures/planet1.png');
-        Planet.planet2Image = new PreloadedImage('/Textures/planet2.png');
-        Planet.planet3Image = new PreloadedImage('/Textures/planet3.png');
-        Planet.planet4Image = new PreloadedImage('/Textures/planet4.png');
-        return Planet;
-    })();
-    Resources.Planet = Planet;
-})(Resources || (Resources = {}));
 var Explosion = (function (_super) {
     __extends(Explosion, _super);
     function Explosion(x, y, radius, damage) {
@@ -401,7 +459,6 @@ var Projectile = (function (_super) {
         _super.call(this, x, y, width, height, color);
         this.angle = angle;
         this.explodeRadius = explodeRadius;
-        this._t = 0;
 
         // set speed
         this.speed = power * Config.bulletSpeedModifier;
@@ -420,7 +477,7 @@ var Projectile = (function (_super) {
             }
         });
 
-        if (this.y > engine.canvas.height || this.y < 0 || this.x > engine.canvas.width || this.x < 0) {
+        if (this.y > Game.current.mapConfig.height || this.y < 0 || this.x > Game.current.mapConfig.width || this.x < 0) {
             engine.removeChild(this);
             return;
         }
@@ -433,6 +490,9 @@ var Projectile = (function (_super) {
         var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
 
         if (!GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White)) {
+            // debug
+            console.log("Projectile collided with pixel (x, y, data)", collisionPixel.x, collisionPixel.y, collisionPixelData);
+
             // collision!
             this.onCollision(engine);
 
@@ -775,21 +835,105 @@ var PlayerTank = (function (_super) {
     };
     return PlayerTank;
 })(Tank);
+/// <reference path="Game.ts" />
+/**
+* Invisible actor that lets user move camera around
+* and allows us to "animate" the camera
+*/
+var FocalPoint = (function (_super) {
+    __extends(FocalPoint, _super);
+    function FocalPoint() {
+        _super.call(this);
+
+        this.invisible = true;
+    }
+    FocalPoint.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
+
+        var mapWidth = Game.current.mapConfig.width, mapHeight = Game.current.mapConfig.height, moveSpeed = 5;
+
+        // Make sure new x, y isn't out of bounds
+        // Camera is centered on (x, y)
+        var viewCenter = new Point(engine.canvas.width / 2, engine.canvas.height / 2), isOnRightEdge = (this.x + viewCenter.x + moveSpeed >= mapWidth), isOnLeftEdge = (this.x - viewCenter.x - moveSpeed <= 0), isOnTopEdge = (this.y - viewCenter.y - moveSpeed <= 0), isOnBottomEdge = (this.y + viewCenter.y + moveSpeed >= mapHeight);
+
+        if (isOnRightEdge) {
+            this.x = mapWidth - viewCenter.x - 1;
+        }
+        if (isOnLeftEdge) {
+            this.x = viewCenter.x + 1;
+        }
+        if (isOnBottomEdge) {
+            this.y = mapHeight - viewCenter.y - 1;
+        }
+        if (isOnTopEdge) {
+            this.y = viewCenter.y + 1;
+        }
+
+        if (engine.isKeyPressed(Keys.W) && !isOnTopEdge) {
+            this.y -= moveSpeed;
+        }
+        if (engine.isKeyPressed(Keys.S) && !isOnBottomEdge) {
+            this.y += moveSpeed;
+        }
+        if (engine.isKeyPressed(Keys.A) && !isOnLeftEdge) {
+            this.x -= moveSpeed;
+        }
+        if (engine.isKeyPressed(Keys.D) && !isOnRightEdge) {
+            this.x += moveSpeed;
+        }
+    };
+
+    FocalPoint.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+
+        ctx.strokeStyle = 'red';
+        ctx.strokeRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
+    };
+    return FocalPoint;
+})(Actor);
 /// <reference path="Excalibur.d.ts" />
 var Patches;
 (function (Patches) {
-    function patchInCollisionMaps(game) {
+    /**
+    * Patch in collision maps
+    *
+    * This takes into account adjustable map sizes that might expand beyond the canvas.
+    * Since `ctx.getImageData` returns black for any pixels out of the canvas, we need
+    * to ensure the canvas size matches the map size. Alternatively, we could probably
+    * transform it before we check for collisions, but this is easier!
+    */
+    function patchInCollisionMaps(engine, widthAccessor, heightAccessor) {
         var collisionCanvas = document.createElement("canvas");
 
         collisionCanvas.id = "collisionCanvas";
-        collisionCanvas.width = game.canvas.width;
-        collisionCanvas.height = game.canvas.height;
+        collisionCanvas.width = widthAccessor();
+        collisionCanvas.height = heightAccessor();
         var collisionCtx = collisionCanvas.getContext('2d');
+
+        // DEBUG
+        // document.body.appendChild(collisionCanvas);
+        var oldUpdate = Engine.prototype["update"];
+        Engine.prototype["update"] = function (delta) {
+            var width = widthAccessor();
+            var height = heightAccessor();
+
+            if (collisionCanvas.width !== width || collisionCanvas.height !== height) {
+                collisionCanvas.width = widthAccessor();
+                collisionCanvas.height = heightAccessor();
+
+                collisionCtx = collisionCanvas.getContext('2d');
+            }
+
+            oldUpdate.apply(this, [delta]);
+        };
 
         var oldDraw = Engine.prototype["draw"];
         Engine.prototype["draw"] = function (delta) {
+            var width = widthAccessor();
+            var height = heightAccessor();
+
             collisionCtx.fillStyle = 'white';
-            collisionCtx.fillRect(0, 0, collisionCanvas.width, collisionCanvas.height);
+            collisionCtx.fillRect(0, 0, width, height);
 
             oldDraw.apply(this, [delta]);
         };
@@ -804,7 +948,7 @@ var Patches;
             });
         };
 
-        (game).collisionCtx = collisionCtx;
+        (engine).collisionCtx = collisionCtx;
     }
     Patches.patchInCollisionMaps = patchInCollisionMaps;
 })(Patches || (Patches = {}));
@@ -1036,28 +1180,35 @@ var UI = (function () {
     return UI;
 })();
 /// <reference path="Excalibur.d.ts" />
+/// <reference path="Resources.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GameSettings.ts" />
+/// <reference path="MapConfiguration.ts" />
 /// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
-/// <reference path="Resources.ts" />
+/// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
+/// <reference path="FocalPoint.ts" />
 /// <reference path="MonkeyPatch.ts" />
 /// <reference path="UI.ts" />
 var Game = (function () {
     function Game() {
         var _this = this;
-        this.game = new Engine(null, null, 'game');
+        this.engine = new Engine(null, null, 'game');
 
-        Patches.patchInCollisionMaps(this.game);
+        Patches.patchInCollisionMaps(this.engine, function () {
+            return _this.mapConfig ? _this.mapConfig.width : _this.engine.canvas.width;
+        }, function () {
+            return _this.mapConfig ? _this.mapConfig.height : _this.engine.canvas.height;
+        });
 
         // debug mode
         // this.game.isDebug = true;
         var loader = this.getLoader();
 
         // load resources
-        this.game.load(loader);
+        this.engine.load(loader);
 
         // HACK: workaround until engine/loader exposes event
         // oncomplete
@@ -1070,7 +1221,7 @@ var Game = (function () {
         };
 
         // start game
-        this.game.start();
+        this.engine.start();
     }
     Game.prototype.getLoader = function () {
         var loader = new Loader();
@@ -1097,11 +1248,11 @@ var Game = (function () {
         this.startMusic();
 
         // Set background color
-        this.game.backgroundColor = Colors.Background;
+        this.engine.backgroundColor = Colors.Background;
 
         // create starfield
-        var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
-        this.game.addChild(starfield);
+        var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
+        this.engine.addChild(starfield);
     };
 
     /**
@@ -1110,32 +1261,85 @@ var Game = (function () {
     Game.prototype.newGame = function (settings) {
         var _this = this;
         // reset
-        var children = this.game.currentScene.children.length, child;
+        var children = this.engine.currentScene.children.length, child;
         for (var i = 0; i < children; i++) {
-            child = this.game.currentScene.children[i];
+            child = this.engine.currentScene.children[i];
 
             if (!(child instanceof Starfield)) {
-                this.game.currentScene.removeChild(child);
+                this.engine.currentScene.removeChild(child);
             }
         }
+
+        // create camera
+        this.focalCamera = new Camera.TopCamera(this.engine);
+        this.engine.camera = this.focalCamera;
+
+        // Generate the map
+        this.generateMap(settings);
+
+        // Place players
+        this.playerTank = new PlayerTank(0, 0);
+
+        this.placeTank(this.playerTank);
+
+        this.engine.addChild(this.playerTank);
+
+        for (var i = 0; i < settings.enemies; i++) {
+            var enemyTank = new Tank(0, 0, Colors.Enemy);
+
+            this.placeTank(enemyTank);
+
+            this.engine.addChild(enemyTank);
+        }
+
+        // draw HUD
+        this.ui.showHUD();
+
+        // update power
+        this.playerTank.addEventListener('update', function () {
+            _this.ui.updateFirepower(_this.playerTank.firepower);
+        });
+
+        // create focal point
+        this.focalPoint = new FocalPoint();
+        this.engine.addChild(this.focalPoint);
+        this.focalCamera.setActorToFollow(this.focalPoint);
+
+        // focus on player on start
+        this.focusOn(this.playerTank);
+    };
+
+    Game.prototype.startMusic = function () {
+        Resources.Global.musicAmbient1.sound.play();
+    };
+
+    Game.prototype.stopMusic = function () {
+        Resources.Global.musicAmbient1.sound.stop();
+    };
+
+    Game.prototype.generateMap = function (settings) {
+        // get map config
+        this.mapConfig = MapConfigurationFactory.getMapConfiguration(settings.mapSize);
 
         // create map
         this.planets = [];
 
-        for (var i = 0; i < Config.maxPlanets; i++) {
-            this.planets.push(new Landmass());
-            this.game.addChild(this.planets[i]);
+        for (var i = 0; i < this.mapConfig.maxPlanets; i++) {
+            this.planets.push(new Landmass(this.mapConfig));
+            this.engine.addChild(this.planets[i]);
         }
 
         // position planets
-        var _planet, planetGenMaxX = this.game.canvas.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = this.game.canvas.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
+        var _planet, planetGenMaxX = this.mapConfig.width - Config.planetGenerationPadding, planetGenMinX = Config.planetGenerationPadding, planetGenMaxY = this.mapConfig.height - Config.planetGenerationPadding, planetGenMinY = Config.planetGenerationPadding;
 
         for (var i = 0; i < this.planets.length; i++) {
             _planet = this.planets[i];
 
             var placed = false;
+            var maxIterations = 2000;
+            var currentIteration = 0;
 
-            while (!placed) {
+            while (!placed && currentIteration < maxIterations) {
                 _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
                 _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 
@@ -1154,40 +1358,13 @@ var Game = (function () {
                     }
                 }
 
+                currentIteration++;
+
                 if (!intersecting) {
                     placed = true;
                 }
             }
         }
-
-        var playerTank = new PlayerTank(0, 0);
-
-        this.placeTank(playerTank);
-
-        this.game.addChild(playerTank);
-
-        for (var i = 0; i < settings.enemies; i++) {
-            var enemyTank = new Tank(0, 0, Colors.Enemy);
-
-            this.placeTank(enemyTank);
-
-            this.game.addChild(enemyTank);
-        }
-
-        // draw HUD
-        this.ui.showHUD();
-
-        playerTank.addEventListener('update', function () {
-            _this.ui.updateFirepower(playerTank.firepower);
-        });
-    };
-
-    Game.prototype.startMusic = function () {
-        Resources.Global.musicAmbient1.sound.play();
-    };
-
-    Game.prototype.stopMusic = function () {
-        Resources.Global.musicAmbient1.sound.stop();
     };
 
     Game.prototype.placeTank = function (tank) {
@@ -1199,7 +1376,7 @@ var Game = (function () {
             var pos = randomPlanet.getRandomPointOnBorder();
 
             var isInViewport = function () {
-                return pos.point.x > 0 && pos.point.x < _this.game.canvas.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < _this.game.canvas.height - tank.getHeight();
+                return pos.point.x > 0 && pos.point.x < _this.mapConfig.width - tank.getWidth() && pos.point.y > 0 && pos.point.y < _this.mapConfig.height - tank.getHeight();
             };
 
             if (isInViewport()) {
@@ -1210,6 +1387,14 @@ var Game = (function () {
             }
         }
     };
+
+    Game.prototype.focusOn = function (actor) {
+        console.log("Focusing on actor", actor, actor.x, actor.y);
+
+        this.focalPoint.x = actor.x;
+        this.focalPoint.y = actor.y;
+    };
+    Game.current = new Game();
     return Game;
 })();
 //# sourceMappingURL=game.js.map

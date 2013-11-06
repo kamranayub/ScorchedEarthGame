@@ -15,8 +15,6 @@ class Projectile extends Actor {
         this.dy = this.speed * Math.sin(angle);
     }
 
-    private _t = 0;
-
     public update(engine: Engine, delta: number): void {
         // super.update(engine, delta);
 
@@ -28,9 +26,9 @@ class Projectile extends Actor {
         });                    
 
         // out of bounds
-        if (this.y > engine.canvas.height ||
+        if (this.y > Game.current.mapConfig.height ||
             this.y < 0 ||
-            this.x > engine.canvas.width ||
+            this.x > Game.current.mapConfig.width ||
             this.x < 0) {
             engine.removeChild(this);
             return;
@@ -46,6 +44,9 @@ class Projectile extends Actor {
         // detect collision using pixel data on off-screen
         // collision map
         if (!GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White)) {
+
+            // debug
+            console.log("Projectile collided with pixel (x, y, data)", collisionPixel.x, collisionPixel.y, collisionPixelData);
 
             // collision!
             this.onCollision(engine);

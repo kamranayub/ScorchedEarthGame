@@ -1,24 +1,46 @@
 ﻿/// <reference path="Excalibur.d.ts" />
+/// <reference path="Resources.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GameSettings.ts" />
+/// <reference path="MapConfiguration.ts" />
 /// <reference path="Starfield.ts" />
 /// <reference path="Landmass.ts" />
 /// <reference path="Tank.ts" />
-/// <reference path="Resources.ts" />
+/// <reference path="Projectile.ts" />
 /// <reference path="CollisionActor.ts" />
+/// <reference path="FocalPoint.ts" />
 /// <reference path="MonkeyPatch.ts" />
 /// <reference path="UI.ts" />
 
 class Game {
 
-    private game: Engine;
+    /**
+     * Singleton instance of the game
+     */
+    public static current: Game = new Game();
+
+    /**
+     * Current map configuration
+     */
+    public mapConfig: IMapConfiguration;
+
+    /**
+     * Current game engine instance
+     */
+    public engine: Engine;
+
     private ui: UI;
-    private planets: Landmass[];
-
+    private planets: Landmass[];    
+    private focalPoint: FocalPoint;
+    private focalCamera: Camera.TopCamera;
+    private playerTank: PlayerTank;
+    
     constructor() {
-        this.game = new Engine(null, null, 'game');        
+        this.engine = new Engine(null, null, 'game');        
 
-        Patches.patchInCollisionMaps(this.game);
+        Patches.patchInCollisionMaps(this.engine,
+            () => this.mapConfig ? this.mapConfig.width : this.engine.canvas.width,
+            () => this.mapConfig ? this.mapConfig.height : this.engine.canvas.height);
 
         // debug mode
         // this.game.isDebug = true;
@@ -26,7 +48,7 @@ class Game {
         var loader = this.getLoader();
 
         // load resources
-        this.game.load(loader);
+        this.engine.load(loader);
 
         // HACK: workaround until engine/loader exposes event
         // oncomplete
@@ -39,7 +61,7 @@ class Game {
         };
 
         // start game
-        this.game.start();
+        this.engine.start();
     }
 
     private getLoader(): Loader {
@@ -60,7 +82,7 @@ class Game {
     private init(): void {
 
         // init UI
-        this.ui = new UI(this);
+        this.ui = new UI(this);              
 
         // play bg music
         Resources.Global.musicAmbient1.sound.setLoop(true);
@@ -68,11 +90,11 @@ class Game {
         this.startMusic();
 
         // Set background color
-        this.game.backgroundColor = Colors.Background;
+        this.engine.backgroundColor = Colors.Background;
 
         // create starfield
-        var starfield = new Starfield(this.game.canvas.width, this.game.canvas.height);
-        this.game.addChild(starfield);        
+        var starfield = new Starfield(this.engine.canvas.width, this.engine.canvas.height);
+        this.engine.addChild(starfield);        
     }
 
     /**
@@ -81,29 +103,82 @@ class Game {
     public newGame(settings: GameSettings): void {
 
         // reset
-        var children = this.game.currentScene.children.length,
+        var children = this.engine.currentScene.children.length,
             child;
         for (var i = 0; i < children; i++) {
-            child = this.game.currentScene.children[i];
+            child = this.engine.currentScene.children[i];
 
             if (!(child instanceof Starfield)) {
-                this.game.currentScene.removeChild(child);
+                this.engine.currentScene.removeChild(child);
             }
         }        
+        
+        // create camera
+        this.focalCamera = new Camera.TopCamera(this.engine);
+        this.engine.camera = this.focalCamera;        
+
+        // Generate the map
+        this.generateMap(settings);
+
+        // Place players
+        this.playerTank = new PlayerTank(0, 0);
+
+        this.placeTank(this.playerTank);
+
+        this.engine.addChild(this.playerTank);        
+
+        // enemy tanks
+        for (var i = 0; i < settings.enemies; i++) {
+            var enemyTank = new Tank(0, 0, Colors.Enemy);
+
+            this.placeTank(enemyTank);
+
+            this.engine.addChild(enemyTank);
+        }
+
+        // draw HUD
+        this.ui.showHUD();
+
+        // update power
+        this.playerTank.addEventListener('update', () => {
+            this.ui.updateFirepower(this.playerTank.firepower);
+        });
+
+        // create focal point
+        this.focalPoint = new FocalPoint();
+        this.engine.addChild(this.focalPoint);
+        this.focalCamera.setActorToFollow(this.focalPoint);
+
+        // focus on player on start
+        this.focusOn(this.playerTank);
+    }    
+
+    public startMusic(): void {        
+        Resources.Global.musicAmbient1.sound.play();
+    }
+
+    public stopMusic(): void {
+        Resources.Global.musicAmbient1.sound.stop();
+    }
+
+    private generateMap(settings: GameSettings): void {
+
+        // get map config
+        this.mapConfig = MapConfigurationFactory.getMapConfiguration(settings.mapSize);
 
         // create map
         this.planets = [];
 
-        for (var i = 0; i < Config.maxPlanets; i++) {
-            this.planets.push(new Landmass());
-            this.game.addChild(this.planets[i]);
+        for (var i = 0; i < this.mapConfig.maxPlanets; i++) {
+            this.planets.push(new Landmass(this.mapConfig));
+            this.engine.addChild(this.planets[i]);
         }
 
         // position planets
         var _planet,
-            planetGenMaxX = this.game.canvas.width - Config.planetGenerationPadding,
+            planetGenMaxX = this.mapConfig.width - Config.planetGenerationPadding,
             planetGenMinX = Config.planetGenerationPadding,
-            planetGenMaxY = this.game.canvas.height - Config.planetGenerationPadding,
+            planetGenMaxY = this.mapConfig.height - Config.planetGenerationPadding,
             planetGenMinY = Config.planetGenerationPadding;
 
         for (var i = 0; i < this.planets.length; i++) {
@@ -111,8 +186,10 @@ class Game {
             _planet = this.planets[i];
 
             var placed = false;
+            var maxIterations = 2000;
+            var currentIteration = 0;
 
-            while (!placed) {
+            while (!placed && currentIteration < maxIterations) {
                 _planet.x = Math.floor(Math.random() * (planetGenMaxX - planetGenMinX) + planetGenMinX);
                 _planet.y = Math.floor(Math.random() * (planetGenMaxY - planetGenMinY) + planetGenMinY);
 
@@ -135,41 +212,13 @@ class Game {
                     }
                 }
 
+                currentIteration++;
+
                 if (!intersecting) {
                     placed = true;
                 }
             }
         }
-
-        var playerTank = new PlayerTank(0, 0);
-
-        this.placeTank(playerTank);
-
-        this.game.addChild(playerTank);
-
-        // enemy tanks
-        for (var i = 0; i < settings.enemies; i++) {
-            var enemyTank = new Tank(0, 0, Colors.Enemy);
-
-            this.placeTank(enemyTank);
-
-            this.game.addChild(enemyTank);
-        }
-
-        // draw HUD
-        this.ui.showHUD();
-
-        playerTank.addEventListener('update', () => {
-            this.ui.updateFirepower(playerTank.firepower);
-        });
-    }    
-
-    public startMusic(): void {        
-        Resources.Global.musicAmbient1.sound.play();
-    }
-
-    public stopMusic(): void {
-        Resources.Global.musicAmbient1.sound.stop();
     }
 
     private placeTank(tank: Tank) {
@@ -182,9 +231,9 @@ class Game {
 
             var isInViewport = () => {
                 return pos.point.x > 0 &&
-                    pos.point.x < this.game.canvas.width - tank.getWidth() &&
+                    pos.point.x < this.mapConfig.width - tank.getWidth() &&
                     pos.point.y > 0 &&
-                    pos.point.y < this.game.canvas.height - tank.getHeight();
+                    pos.point.y < this.mapConfig.height - tank.getHeight();
             };
 
             // make sure it's in view port
@@ -196,5 +245,12 @@ class Game {
                 tank.placeOn(randomPlanet, pos.point, pos.angle);
             }
         }
+    }
+
+    private focusOn(actor: Actor): void {
+        console.log("Focusing on actor", actor, actor.x, actor.y);
+
+        this.focalPoint.x = actor.x;
+        this.focalPoint.y = actor.y;
     }
 }

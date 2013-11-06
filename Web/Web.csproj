@@ -150,9 +150,11 @@
     <Content Include="Scripts\Game\Game.ts" />
     <TypeScriptCompile Include="Scripts\Game\CollisionActor.ts" />
     <TypeScriptCompile Include="Scripts\Game\Explosion.ts" />
+    <TypeScriptCompile Include="Scripts\Game\FocalPoint.ts" />
     <TypeScriptCompile Include="Scripts\Game\GameSettings.ts" />
     <TypeScriptCompile Include="Scripts\Game\GraphicUtils.ts" />
     <TypeScriptCompile Include="Scripts\Game\Healthbar.ts" />
+    <TypeScriptCompile Include="Scripts\Game\MapConfiguration.ts" />
     <TypeScriptCompile Include="Scripts\Game\MonkeyPatch.ts" />
     <TypeScriptCompile Include="Scripts\Game\Projectile.ts" />
     <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />

@@ -12,7 +12,7 @@ class Landmass extends CollisionActor {
     private planetCtx: CanvasRenderingContext2D;
     private planetCollisionCtx: CanvasRenderingContext2D;
 
-    constructor() {
+    constructor(private mapConfig: IMapConfiguration) {
         super(0, 0, null, null, Colors.Land);
             
         this.generate();
@@ -110,7 +110,7 @@ class Landmass extends CollisionActor {
     private generate(): void {       
 
         // get a random radius to use
-        this.radius = Math.random() * (Config.planetMaxRadius - Config.planetMinRadius) + Config.planetMinRadius;
+        this.radius = Math.random() * (this.mapConfig.planetMaxRadius - this.mapConfig.planetMinRadius) + this.mapConfig.planetMinRadius;
 
         this.setWidth(this.radius * 2);
         this.setHeight(this.radius * 2);

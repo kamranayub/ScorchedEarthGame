@@ -19,6 +19,12 @@ button {
   left: 0;
   right: 0;
 }
+#collisionCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 3px solid red;
+}
 /**
  * Header
  */

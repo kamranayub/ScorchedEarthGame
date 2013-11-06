@@ -38,15 +38,6 @@ var Config = {
     // Gravity constant
     gravity: 6,
 
-    // Minimum planet radius
-    planetMinRadius: 35,
-
-    // Maximum planet radius
-    planetMaxRadius: 200,
-
-    // # of planets to generate
-    maxPlanets: 8,
-
     // amount of distance from canvas edges to spawn planets
     planetGenerationPadding: 120
 };
