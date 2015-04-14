@@ -1,10 +1,10 @@
 /// <reference path="Explosion.ts" />
 
-class Projectile extends Actor {
+class Projectile extends ex.Actor {
 
     speed: number;
 
-    constructor(x: number, y: number, width: number, height: number, color: Color, public angle: number, power: number, public explodeRadius: number) {
+    constructor(x: number, y: number, width: number, height: number, color: ex.Color, public angle: number, power: number, public explodeRadius: number) {
         super(x, y, width, height, color);
 
         // set speed
@@ -15,7 +15,7 @@ class Projectile extends Actor {
         this.dy = this.speed * Math.sin(angle);
     }
 
-    public update(engine: Engine, delta: number): void {
+    public update(engine: ex.Engine, delta: number): void {
         // super.update(engine, delta);
 
         // act on this projectile from all planets
@@ -38,7 +38,7 @@ class Projectile extends Actor {
 
         // check collision with tanks
         // get projection ahead of where we are currently
-        var collisionPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var collisionPixel = new ex.Point(Math.floor(this.x), Math.floor(this.y));
         var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
 
         // detect collision using pixel data on off-screen
@@ -56,7 +56,7 @@ class Projectile extends Actor {
         }
     }    
 
-    public onCollision(engine: Engine): void {        
+    public onCollision(engine: ex.Engine): void {        
         // remove myself
         engine.removeChild(this);
     }

@@ -14,7 +14,7 @@ namespace Web {
                 "~/styles/game.css"));
 
             bundles.Add(new Bundle("~/_scripts/game").Include(
-                "~/scripts/game/Excalibur.js",
+                "~/scripts/Excalibur.js",
                 "~/scripts/game.js"));
 
         }

@@ -11,7 +11,7 @@ var CollisionActor = (function (_super) {
     }
     CollisionActor.prototype.drawCollisionMap = function (ctx, delta) {
         var oldColor = this.color;
-        this.color = new Color(0, 0, 0, 1);
+        this.color = new ex.Color(0, 0, 0, 1);
         this.draw(ctx, delta);
         this.color = oldColor;
     };
@@ -31,13 +31,124 @@ var CollisionActor = (function (_super) {
     CollisionActor.prototype.collide = function (engine, actor) {
     };
     return CollisionActor;
-})(Actor);
+})(ex.Actor);
+var DOM = (function () {
+    function DOM() {
+    }
+    /**
+     * Gets a DOM element by ID
+     * @param id The ID to search by
+     */
+    DOM.id = function (id) {
+        return document.getElementById(id);
+    };
+    /**
+     * Gets a DOM element by ID
+     * @param id The ID to search by
+     */
+    DOM.idOf = function (id) {
+        return document.getElementById(id);
+    };
+    /**
+     * Gets a single DOM element by a selector
+     * @param selector The selector
+     * @param ctx A context to search from (default: null)
+     */
+    DOM.query = function (selector, ctx) {
+        if (ctx === void 0) { ctx = null; }
+        ctx = ctx || document.body;
+        return ctx.querySelector(selector);
+    };
+    /**
+     * Hides a DOM element
+     */
+    DOM.hide = function (element) {
+        element.style.display = 'none';
+    };
+    /**
+     * Shows a DOM element
+     */
+    DOM.show = function (element) {
+        element.style.display = 'block';
+    };
+    /**
+     * Toggles a CSS class on an element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to toggle
+     * @returns True if the class existed and false if not
+     */
+    DOM.toggleClass = function (element, cls) {
+        if (this.hasClass(element, cls)) {
+            this.removeClass(element, cls);
+            return true;
+        }
+        else {
+            this.addClass(element, cls);
+            return false;
+        }
+    };
+    /**
+     * Replaces a CSS class on an element
+     * @param element The DOM element to manipulate
+     * @param search The CSS class to find
+     * @param replace The CSS class to replace with
+     */
+    DOM.replaceClass = function (element, search, replace) {
+        if (this.hasClass(element, search)) {
+            this.removeClass(element, search);
+            this.addClass(element, replace);
+        }
+    };
+    /**
+     * Whether or not an element has a CSS class present
+     * @param element The DOM element to check
+     * @param cls The CSS class to check for
+     * @returns True if the class exists and false if not
+     */
+    DOM.hasClass = function (element, cls) {
+        return element.classList.contains(cls);
+    };
+    /**
+     * Adds a CSS class to a DOM element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to add
+     */
+    DOM.addClass = function (element, cls) {
+        element.classList.add(cls);
+    };
+    /**
+     * Removes a CSS class to a DOM element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to remove
+     */
+    DOM.removeClass = function (element, cls) {
+        element.classList.remove(cls);
+    };
+    DOM.onAnimationEnd = function (element, done) {
+        var animationEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitAnimationEnd' : 'animationend';
+        var handler = function () {
+            element.removeEventListener(animationEndEvent, handler);
+            done();
+        };
+        element.addEventListener(animationEndEvent, handler);
+    };
+    DOM.onTransitionEnd = function (element, done) {
+        var transitionEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitTransitionEnd' : 'transitionend';
+        var handler = function () {
+            element.removeEventListener(transitionEndEvent, handler);
+            done();
+        };
+        element.addEventListener(transitionEndEvent, handler);
+    };
+    return DOM;
+})();
 var Explosion = (function (_super) {
     __extends(Explosion, _super);
-    function Explosion(x, y, radius, damage) {
+    function Explosion(x, y, radius, damage, dir) {
         _super.call(this, x, y, radius, radius, Colors.ExplosionBegin);
         this.radius = radius;
         this.damage = damage;
+        this.dir = dir;
         this.expansionModifier = 0.15;
         this._currentRadius = 0;
         this._colorDiffR = Colors.ExplosionEnd.r - Colors.ExplosionBegin.r;
@@ -49,7 +160,7 @@ var Explosion = (function (_super) {
         _super.prototype.update.call(this, engine, delta);
         // adjust color based on current radius
         var percRadius = this._currentRadius / this.radius;
-        this.color = new Color(Math.floor(Colors.ExplosionBegin.r + (this._colorDiffR * percRadius)), Math.floor(Colors.ExplosionBegin.g + (this._colorDiffG * percRadius)), Math.floor(Colors.ExplosionBegin.b + (this._colorDiffB * percRadius)));
+        this.color = new ex.Color(Math.floor(Colors.ExplosionBegin.r + (this._colorDiffR * percRadius)), Math.floor(Colors.ExplosionBegin.g + (this._colorDiffG * percRadius)), Math.floor(Colors.ExplosionBegin.b + (this._colorDiffB * percRadius)));
         // elapsed finished?
         if (this._currentRadius >= this.radius) {
             // loop through landmasses and destruct
@@ -77,44 +188,44 @@ var Explosion = (function (_super) {
         ctx.fill();
     };
     return Explosion;
-})(Actor);
+})(ex.Actor);
 var Resources;
 (function (Resources) {
     var Global = (function () {
         function Global() {
         }
-        Global.musicAmbient1 = new PreloadedSound("/Music/g33x-space-ambient.mp3");
+        Global.musicAmbient1 = new ex.Sound("/Music/g33x-space-ambient.mp3");
         return Global;
     })();
     Resources.Global = Global;
     var Tanks = (function () {
         function Tanks() {
         }
-        Tanks.dieSound = new PreloadedSound("/Sounds/Die.wav");
-        Tanks.fireSound = new PreloadedSound("/Sounds/Fire.wav");
-        Tanks.moveBarrelSound = new PreloadedSound("/Sounds/MoveBarrel.wav");
+        Tanks.dieSound = new ex.Sound("/Sounds/Die.wav");
+        Tanks.fireSound = new ex.Sound("/Sounds/Fire.wav");
+        Tanks.moveBarrelSound = new ex.Sound("/Sounds/MoveBarrel.wav");
         return Tanks;
     })();
     Resources.Tanks = Tanks;
     var Explosions = (function () {
         function Explosions() {
         }
-        Explosions.smallExplosion = new PreloadedSound("/Sounds/Explosion-Small.wav");
+        Explosions.smallExplosion = new ex.Sound("/Sounds/Explosion-Small.wav");
         return Explosions;
     })();
     Resources.Explosions = Explosions;
     var Planet = (function () {
         function Planet() {
         }
-        Planet.planet1Image = new PreloadedImage('/Textures/planet1.png');
-        Planet.planet2Image = new PreloadedImage('/Textures/planet2.png');
-        Planet.planet3Image = new PreloadedImage('/Textures/planet3.png');
-        Planet.planet4Image = new PreloadedImage('/Textures/planet4.png');
+        Planet.planet1Image = new ex.Texture('/Textures/planet1.png');
+        Planet.planet2Image = new ex.Texture('/Textures/planet2.png');
+        Planet.planet3Image = new ex.Texture('/Textures/planet3.png');
+        Planet.planet4Image = new ex.Texture('/Textures/planet4.png');
         return Planet;
     })();
     Resources.Planet = Planet;
 })(Resources || (Resources = {}));
-/// <reference path="Excalibur.d.ts" />
+/// <reference path="../Excalibur.d.ts" />
 var Config = {
     // width of tanks
     tankWidth: 32,
@@ -144,15 +255,15 @@ var Config = {
     planetGenerationPadding: 120
 };
 var Colors = {
-    Black: Color.fromHex("#000000"),
-    White: Color.fromHex("#ffffff"),
-    Background: Color.fromHex("#141414"),
-    Player: Color.fromHex("#a73c3c"),
-    Enemy: Color.fromHex("#c0b72a"),
-    Land: Color.fromHex("#8c8c8c"),
-    Projectile: Color.fromHex("#ffffff"),
-    ExplosionBegin: Color.fromHex("#ddd32f"),
-    ExplosionEnd: Color.fromHex("#c12713")
+    Black: ex.Color.fromHex("#000000"),
+    White: ex.Color.fromHex("#ffffff"),
+    Background: ex.Color.fromHex("#141414"),
+    Player: ex.Color.fromHex("#a73c3c"),
+    Enemy: ex.Color.fromHex("#c0b72a"),
+    Land: ex.Color.fromHex("#8c8c8c"),
+    Projectile: ex.Color.fromHex("#ffffff"),
+    ExplosionBegin: ex.Color.fromHex("#ddd32f"),
+    ExplosionEnd: ex.Color.fromHex("#c12713")
 };
 var GameSettings = (function () {
     function GameSettings() {
@@ -229,19 +340,17 @@ var Starfield = (function (_super) {
     __extends(Starfield, _super);
     function Starfield(width, height) {
         _super.call(this, 0, 0, width, height);
-        Logger.getInstance().log("Creating starfield, " + width + "x" + height);
+        ex.Logger.getInstance().info("Creating starfield, " + width + "x" + height);
         var x, y, a, s, dx1 = -(Math.random() * 5), dx2 = -(Math.random() * 5);
         for (var i = 0; i < 1000; i++) {
             x = Math.floor(Math.random() * width);
             y = Math.floor(Math.random() * height);
             a = Math.random();
-            s = new Actor(x, y, 1, 1, new Color(255, 255, 255, a));
+            s = new ex.Actor(x, y, 1, 1, new ex.Color(255, 255, 255, a));
             s.dx = Math.floor(Math.random() * 2) === 1 ? dx1 : dx2;
             s.addEventListener('update', this.starOnUpdate(this, s));
             this.addChild(s);
         }
-        this.solid = true;
-        this.invisible = true;
     }
     Starfield.prototype.draw = function (ctx, delta) {
         _super.prototype.draw.call(this, ctx, delta);
@@ -257,22 +366,21 @@ var Starfield = (function (_super) {
         };
     };
     return Starfield;
-})(Actor);
-/// <reference path="Excalibur.d.ts" />
+})(ex.Actor);
 /// <reference path="GameConfig.ts" />
 /// <reference path="CollisionActor.ts" />
 var Landmass = (function (_super) {
     __extends(Landmass, _super);
     function Landmass(mapConfig) {
-        _super.call(this, 0, 0, null, null, Colors.Land);
+        _super.call(this, 0, 0);
         this.mapConfig = mapConfig;
         // clamp velocities because > 2 is too much
         // max x velocity
         this.xm = 1.8;
         // max y velocity
         this.ym = 1.8;
+        this.anchor.setTo(0, 0);
         this.generate();
-        this.invisible = true;
     }
     Landmass.prototype.update = function (engine, delta) {
         _super.prototype.update.call(this, engine, delta);
@@ -290,13 +398,14 @@ var Landmass = (function (_super) {
         var randomY = this.radius * Math.sin(randomAngle);
         return {
             angle: randomAngle,
-            point: new Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
+            point: new ex.Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
         };
     };
     Landmass.prototype.collide = function (engine, actor) {
         _super.prototype.collide.call(this, engine, actor);
         if (actor instanceof Explosion) {
-            this.destruct(new Point(actor.x, actor.y), actor.radius);
+            var explosion = actor;
+            this.destruct(new ex.Point(actor.x, actor.y), explosion.radius);
         }
     };
     Landmass.prototype.destruct = function (point, radius) {
@@ -429,7 +538,7 @@ var Projectile = (function (_super) {
         var collisionCtx = engine.collisionCtx;
         // check collision with tanks
         // get projection ahead of where we are currently
-        var collisionPixel = new Point(Math.floor(this.x), Math.floor(this.y));
+        var collisionPixel = new ex.Point(Math.floor(this.x), Math.floor(this.y));
         var collisionPixelData = collisionCtx.getImageData(collisionPixel.x, collisionPixel.y, 1, 1).data;
         // detect collision using pixel data on off-screen
         // collision map
@@ -447,22 +556,20 @@ var Projectile = (function (_super) {
         engine.removeChild(this);
     };
     return Projectile;
-})(Actor);
+})(ex.Actor);
 var Healthbar = (function (_super) {
     __extends(Healthbar, _super);
     function Healthbar(max) {
-        _super.call(this, 0, 0, Config.tankWidth, 5, Color.Green);
+        _super.call(this, 0, 0, Config.tankWidth, 5, ex.Color.Green);
         this.max = max;
-        this.invisible = true;
         this.current = max;
     }
     Healthbar.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
         var startAngle = Math.PI + (Math.PI / 8);
         var endAngle = Math.PI * 2 - (Math.PI / 8);
         var diffAngle = endAngle - startAngle;
         // background
-        ctx.strokeStyle = new Color(255, 255, 255, 0.3).toString();
+        ctx.strokeStyle = new ex.Color(255, 255, 255, 0.3).toString();
         ctx.beginPath();
         ctx.arc(this.x + this.getWidth() / 2, this.y, 25, startAngle, endAngle);
         ctx.lineWidth = 4;
@@ -491,7 +598,7 @@ var Healthbar = (function (_super) {
         return this.current;
     };
     return Healthbar;
-})(Actor);
+})(ex.Actor);
 var Projectiles;
 (function (Projectiles) {
     /**
@@ -505,9 +612,9 @@ var Projectiles;
         Missile.prototype.onCollision = function (engine) {
             _super.prototype.onCollision.call(this, engine);
             // play sound
-            Resources.Explosions.smallExplosion.sound.play();
+            Resources.Explosions.smallExplosion.play();
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5, new ex.Vector(this.dx, this.dy));
             // add explosion to engine
             engine.addChild(splosion);
         };
@@ -528,18 +635,16 @@ var Projectiles;
         BigMissile.prototype.onCollision = function (engine) {
             _super.prototype.onCollision.call(this, engine);
             // play sound
-            BigMissile._explodeSound.play();
+            Resources.Explosions.smallExplosion.play();
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 20);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 20, new ex.Vector(this.dx, this.dy));
             // add explosion to engine
             engine.addChild(splosion);
         };
-        BigMissile._explodeSound = new Media.Sound("/Sounds/Explosion-Small.wav");
         return BigMissile;
     })(Projectile);
     Projectiles.BigMissile = BigMissile;
 })(Projectiles || (Projectiles = {}));
-/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GraphicUtils.ts" />
 /// <reference path="Resources.ts" />
@@ -554,7 +659,6 @@ var Tank = (function (_super) {
         _super.call(this, x, y, Config.tankWidth, Config.tankHeight, color);
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
-        this.invisible = true;
         this.healthbar = new Healthbar(100);
     }
     Tank.prototype.draw = function (ctx, delta) {
@@ -596,8 +700,6 @@ var Tank = (function (_super) {
         }
         // draw on landmass/scale/rotate
         ctx.restore();
-        // super
-        _super.prototype.draw.call(this, ctx, delta);
     };
     Tank.prototype.placeOn = function (landmass, point, angle) {
         this.landmass = landmass;
@@ -631,30 +733,31 @@ var Tank = (function (_super) {
         Resources.Tanks.fireSound.sound.play();
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     };
-    Tank.prototype.damage = function (engine, value) {
+    Tank.prototype.damage = function (value) {
         this.healthbar.reduce(value);
         if (this.healthbar.getCurrent() <= 0) {
-            this.die(engine);
+            this.die();
         }
     };
     Tank.prototype.collide = function (engine, actor) {
         _super.prototype.collide.call(this, engine, actor);
         if (actor instanceof Explosion) {
-            this.damage(engine, actor.damage);
+            this.damage(actor.damage);
         }
     };
-    Tank.prototype.die = function (engine) {
+    Tank.prototype.die = function () {
         // play explosions
         var minX = this.x - 15, maxX = this.x + 15, minY = this.y - 15, maxY = this.y + 15;
         // kill
-        engine.removeChild(this);
+        Game.current.engine.remove(this);
         // badass explode sound
         Resources.Tanks.dieSound.sound.play();
         for (var i = 0; i < 5; i++) {
-            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
-            engine.addChild(splody);
+            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4, new ex.Vector(0, 0));
+            Game.current.engine.add(splody);
             console.log("Added splody", splody.x, splody.y);
         }
+        return this;
     };
     return Tank;
 })(CollisionActor);
@@ -663,30 +766,34 @@ var PlayerTank = (function (_super) {
     function PlayerTank(x, y) {
         _super.call(this, x, y, Colors.Player);
         this.currentFirepowerAccelDelta = 0;
-        this.addEventListener('keydown', this.handleKeyDown);
-        this.addEventListener('keyup', this.handleKeyUp);
     }
     PlayerTank.prototype.update = function (engine, delta) {
         _super.prototype.update.call(this, engine, delta);
+        if (engine.input.keyboard.isKeyDown(38 /* Up */) || engine.input.keyboard.isKeyDown(40 /* Down */)) {
+            this.shouldFirepowerAccel = true;
+        }
+        if (engine.input.keyboard.isKeyUp(38 /* Up */) || engine.input.keyboard.isKeyUp(40 /* Down */)) {
+            this.shouldFirepowerAccel = false;
+        }
         if (this.shouldFirepowerAccel) {
             this.currentFirepowerAccelDelta += Config.firepowerAccel;
         }
         else {
             this.currentFirepowerAccelDelta = 0;
         }
-        if (engine.isKeyPressed(37 /* LEFT */)) {
+        if (engine.input.keyboard.isKeyPressed(37 /* Left */)) {
             this.moveBarrelLeft(Config.barrelRotateVelocity, delta);
         }
-        else if (engine.isKeyPressed(39 /* RIGHT */)) {
+        else if (engine.input.keyboard.isKeyPressed(39 /* Right */)) {
             this.moveBarrelRight(Config.barrelRotateVelocity, delta);
         }
-        else if (engine.isKeyPressed(38 /* UP */)) {
+        else if (engine.input.keyboard.isKeyPressed(38 /* Up */)) {
             this.incrementFirepower(delta);
         }
-        else if (engine.isKeyPressed(40 /* DOWN */)) {
+        else if (engine.input.keyboard.isKeyPressed(40 /* Down */)) {
             this.decrementFirepower(delta);
         }
-        else if (engine.isKeyUp(32 /* SPACE */)) {
+        else if (engine.input.keyboard.isKeyUp(32 /* Space */)) {
             var bullet = this.getProjectile();
             engine.addChild(bullet);
         }
@@ -708,23 +815,9 @@ var PlayerTank = (function (_super) {
         }
         this.firepower -= Math.ceil(this.currentFirepowerAccelDelta * delta / 1000);
     };
-    PlayerTank.prototype.handleKeyDown = function (event) {
-        if (event === null)
-            return;
-        if (event.key === 38 /* UP */ || event.key === 40 /* DOWN */) {
-            this.shouldFirepowerAccel = true;
-        }
-    };
-    PlayerTank.prototype.handleKeyUp = function (event) {
-        if (event === null)
-            return;
-        if (event.key === 38 /* UP */ || event.key === 40 /* DOWN */) {
-            this.shouldFirepowerAccel = false;
-        }
-    };
     return PlayerTank;
 })(Tank);
-/// <reference path="Excalibur.d.ts" />
+/// <reference path="../Excalibur.d.ts" />
 var Patches;
 (function (Patches) {
     /**
@@ -743,8 +836,8 @@ var Patches;
         var collisionCtx = collisionCanvas.getContext('2d');
         // DEBUG
         // document.body.appendChild(collisionCanvas);
-        var oldUpdate = Engine.prototype["update"];
-        Engine.prototype["update"] = function (delta) {
+        var oldUpdate = ex.Engine.prototype["update"];
+        ex.Engine.prototype["update"] = function (delta) {
             var width = widthAccessor();
             var height = heightAccessor();
             if (collisionCanvas.width !== width || collisionCanvas.height !== height) {
@@ -754,136 +847,35 @@ var Patches;
             }
             oldUpdate.apply(this, [delta]);
         };
-        var oldDraw = Engine.prototype["draw"];
-        Engine.prototype["draw"] = function (delta) {
+        var oldDraw = ex.Engine.prototype["draw"];
+        ex.Engine.prototype["draw"] = function (delta) {
             var width = widthAccessor();
             var height = heightAccessor();
             collisionCtx.fillStyle = 'white';
             collisionCtx.fillRect(0, 0, width, height);
             oldDraw.apply(this, [delta]);
         };
-        SceneNode.prototype.draw = function (ctx, delta) {
-            this.children.forEach(function (actor) {
-                actor.draw(ctx, delta);
-                if (actor instanceof CollisionActor) {
-                    actor.drawCollisionMap(collisionCtx, delta);
+        ex.Scene.prototype.draw = function (ctx, delta) {
+            ctx.save();
+            if (this.camera) {
+                this.camera.update(ctx, delta);
+            }
+            var i, len;
+            for (i = 0, len = this.children.length; i < len; i++) {
+                // only draw actors that are visible
+                if (this.children[i].visible) {
+                    this.children[i].draw(ctx, delta);
                 }
-            });
+                if (this.children[i] instanceof CollisionActor) {
+                    this.children[i].drawCollisionMap(collisionCtx, delta);
+                }
+            }
+            ctx.restore();
         };
         engine.collisionCtx = collisionCtx;
     }
     Patches.patchInCollisionMaps = patchInCollisionMaps;
 })(Patches || (Patches = {}));
-var DOM = (function () {
-    function DOM() {
-    }
-    /**
-     * Gets a DOM element by ID
-     * @param id The ID to search by
-     */
-    DOM.id = function (id) {
-        return document.getElementById(id);
-    };
-    /**
-     * Gets a DOM element by ID
-     * @param id The ID to search by
-     */
-    DOM.idOf = function (id) {
-        return document.getElementById(id);
-    };
-    /**
-     * Gets a single DOM element by a selector
-     * @param selector The selector
-     * @param ctx A context to search from (default: null)
-     */
-    DOM.query = function (selector, ctx) {
-        if (ctx === void 0) { ctx = null; }
-        ctx = ctx || document.body;
-        return ctx.querySelector(selector);
-    };
-    /**
-     * Hides a DOM element
-     */
-    DOM.hide = function (element) {
-        element.style.display = 'none';
-    };
-    /**
-     * Shows a DOM element
-     */
-    DOM.show = function (element) {
-        element.style.display = 'block';
-    };
-    /**
-     * Toggles a CSS class on an element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to toggle
-     * @returns True if the class existed and false if not
-     */
-    DOM.toggleClass = function (element, cls) {
-        if (this.hasClass(element, cls)) {
-            this.removeClass(element, cls);
-            return true;
-        }
-        else {
-            this.addClass(element, cls);
-            return false;
-        }
-    };
-    /**
-     * Replaces a CSS class on an element
-     * @param element The DOM element to manipulate
-     * @param search The CSS class to find
-     * @param replace The CSS class to replace with
-     */
-    DOM.replaceClass = function (element, search, replace) {
-        if (this.hasClass(element, search)) {
-            this.removeClass(element, search);
-            this.addClass(element, replace);
-        }
-    };
-    /**
-     * Whether or not an element has a CSS class present
-     * @param element The DOM element to check
-     * @param cls The CSS class to check for
-     * @returns True if the class exists and false if not
-     */
-    DOM.hasClass = function (element, cls) {
-        return element.classList.contains(cls);
-    };
-    /**
-     * Adds a CSS class to a DOM element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to add
-     */
-    DOM.addClass = function (element, cls) {
-        element.classList.add(cls);
-    };
-    /**
-     * Removes a CSS class to a DOM element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to remove
-     */
-    DOM.removeClass = function (element, cls) {
-        element.classList.remove(cls);
-    };
-    DOM.onAnimationEnd = function (element, done) {
-        var animationEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitAnimationEnd' : 'animationend';
-        var handler = function () {
-            element.removeEventListener(animationEndEvent, handler);
-            done();
-        };
-        element.addEventListener(animationEndEvent, handler);
-    };
-    DOM.onTransitionEnd = function (element, done) {
-        var transitionEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitTransitionEnd' : 'transitionend';
-        var handler = function () {
-            element.removeEventListener(transitionEndEvent, handler);
-            done();
-        };
-        element.addEventListener(transitionEndEvent, handler);
-    };
-    return DOM;
-})();
 /// <reference path="DOM.ts" />
 var UI = (function () {
     function UI(game) {
@@ -965,7 +957,59 @@ var UI = (function () {
     };
     return UI;
 })();
-/// <reference path="Excalibur.d.ts" />
+/// <reference path="Game.ts" />
+/**
+ * Invisible actor that lets user move camera around
+ * and allows us to "animate" the camera
+ */
+var FocalPoint = (function (_super) {
+    __extends(FocalPoint, _super);
+    function FocalPoint() {
+        _super.call(this);
+        this.visible = false;
+        this.anchor.setTo(0, 0);
+    }
+    FocalPoint.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
+        var mapWidth = Game.current.mapConfig.width, mapHeight = Game.current.mapConfig.height, moveSpeed = 5;
+        // Make sure new x, y isn't out of bounds
+        // Camera is centered on (x, y)
+        var viewCenter = new ex.Point(engine.canvas.width / 2, engine.canvas.height / 2), isOnRightEdge = (this.x + viewCenter.x + moveSpeed >= mapWidth), isOnLeftEdge = (this.x - viewCenter.x - moveSpeed <= 0), isOnTopEdge = (this.y - viewCenter.y - moveSpeed <= 0), isOnBottomEdge = (this.y + viewCenter.y + moveSpeed >= mapHeight);
+        if (isOnRightEdge) {
+            this.x = mapWidth - viewCenter.x - 1;
+        }
+        if (isOnLeftEdge) {
+            this.x = viewCenter.x + 1;
+        }
+        if (isOnBottomEdge) {
+            this.y = mapHeight - viewCenter.y - 1;
+        }
+        if (isOnTopEdge) {
+            this.y = viewCenter.y + 1;
+        }
+        if (engine.input.keyboard.isKeyPressed(87 /* W */) && !isOnTopEdge) {
+            this.y -= moveSpeed;
+        }
+        if (engine.input.keyboard.isKeyPressed(83 /* S */) && !isOnBottomEdge) {
+            this.y += moveSpeed;
+        }
+        if (engine.input.keyboard.isKeyPressed(65 /* A */) && !isOnLeftEdge) {
+            this.x -= moveSpeed;
+        }
+        if (engine.input.keyboard.isKeyPressed(68 /* D */) && !isOnRightEdge) {
+            this.x += moveSpeed;
+        }
+    };
+    FocalPoint.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+        if (Game.current.engine.isDebug) {
+            ctx.strokeStyle = 'red';
+            ctx.strokeRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
+        }
+    };
+    return FocalPoint;
+})(ex.Actor);
+/// <reference path="../Excalibur.d.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GameSettings.ts" />
@@ -981,34 +1025,25 @@ var UI = (function () {
 var Game = (function () {
     function Game() {
         var _this = this;
-        this.engine = new Engine(null, null, 'game');
+        this.engine = new ex.Engine(0, 0, 'game', 0 /* FullScreen */);
         Patches.patchInCollisionMaps(this.engine, function () { return _this.mapConfig ? _this.mapConfig.width : _this.engine.canvas.width; }, function () { return _this.mapConfig ? _this.mapConfig.height : _this.engine.canvas.height; });
         // debug mode
         // this.game.isDebug = true;
         var loader = this.getLoader();
-        // load resources
-        this.engine.load(loader);
-        // HACK: workaround until engine/loader exposes event
-        // oncomplete
-        var oldOnComplete = loader.oncomplete;
-        loader.oncomplete = function () {
-            oldOnComplete.apply(loader, arguments);
-            _this.init();
-        };
         // start game
-        this.engine.start();
+        this.engine.start(loader).then(function () { return _this.init(); });
     }
     Game.prototype.getLoader = function () {
-        var loader = new Loader();
-        loader.addResource('mus-ambient1', Resources.Global.musicAmbient1);
-        loader.addResource('snd-die', Resources.Tanks.dieSound);
-        loader.addResource('snd-fire', Resources.Tanks.fireSound);
-        loader.addResource('snd-explode-small', Resources.Explosions.smallExplosion);
-        loader.addResource('snd-moveBarrel', Resources.Tanks.moveBarrelSound);
-        loader.addResource('img-planet1', Resources.Planet.planet1Image);
-        loader.addResource('img-planet2', Resources.Planet.planet2Image);
-        loader.addResource('img-planet3', Resources.Planet.planet3Image);
-        loader.addResource('img-planet4', Resources.Planet.planet4Image);
+        var loader = new ex.Loader();
+        loader.addResource(Resources.Global.musicAmbient1);
+        loader.addResource(Resources.Tanks.dieSound);
+        loader.addResource(Resources.Tanks.fireSound);
+        loader.addResource(Resources.Explosions.smallExplosion);
+        loader.addResource(Resources.Tanks.moveBarrelSound);
+        loader.addResource(Resources.Planet.planet1Image);
+        loader.addResource(Resources.Planet.planet2Image);
+        loader.addResource(Resources.Planet.planet3Image);
+        loader.addResource(Resources.Planet.planet4Image);
         return loader;
     };
     Game.prototype.init = function () {
@@ -1038,8 +1073,8 @@ var Game = (function () {
             }
         }
         // create camera
-        this.focalCamera = new Camera.TopCamera(this.engine);
-        this.engine.camera = this.focalCamera;
+        this.focalCamera = new ex.TopCamera();
+        this.engine.currentScene.camera = this.focalCamera;
         // Generate the map
         this.generateMap(settings);
         // Place players
@@ -1054,7 +1089,7 @@ var Game = (function () {
         // draw HUD
         this.ui.showHUD();
         // update power
-        this.playerTank.addEventListener('update', function () {
+        this.playerTank.on('update', function () {
             _this.ui.updateFirepower(_this.playerTank.firepower);
         });
         // create focal point
@@ -1136,53 +1171,4 @@ var Game = (function () {
     Game.current = new Game();
     return Game;
 })();
-/// <reference path="Game.ts" />
-/**
- * Invisible actor that lets user move camera around
- * and allows us to "animate" the camera
- */
-var FocalPoint = (function (_super) {
-    __extends(FocalPoint, _super);
-    function FocalPoint() {
-        _super.call(this);
-        this.invisible = true;
-    }
-    FocalPoint.prototype.update = function (engine, delta) {
-        _super.prototype.update.call(this, engine, delta);
-        var mapWidth = Game.current.mapConfig.width, mapHeight = Game.current.mapConfig.height, moveSpeed = 5;
-        // Make sure new x, y isn't out of bounds
-        // Camera is centered on (x, y)
-        var viewCenter = new Point(engine.canvas.width / 2, engine.canvas.height / 2), isOnRightEdge = (this.x + viewCenter.x + moveSpeed >= mapWidth), isOnLeftEdge = (this.x - viewCenter.x - moveSpeed <= 0), isOnTopEdge = (this.y - viewCenter.y - moveSpeed <= 0), isOnBottomEdge = (this.y + viewCenter.y + moveSpeed >= mapHeight);
-        if (isOnRightEdge) {
-            this.x = mapWidth - viewCenter.x - 1;
-        }
-        if (isOnLeftEdge) {
-            this.x = viewCenter.x + 1;
-        }
-        if (isOnBottomEdge) {
-            this.y = mapHeight - viewCenter.y - 1;
-        }
-        if (isOnTopEdge) {
-            this.y = viewCenter.y + 1;
-        }
-        if (engine.isKeyPressed(87 /* W */) && !isOnTopEdge) {
-            this.y -= moveSpeed;
-        }
-        if (engine.isKeyPressed(83 /* S */) && !isOnBottomEdge) {
-            this.y += moveSpeed;
-        }
-        if (engine.isKeyPressed(65 /* A */) && !isOnLeftEdge) {
-            this.x -= moveSpeed;
-        }
-        if (engine.isKeyPressed(68 /* D */) && !isOnRightEdge) {
-            this.x += moveSpeed;
-        }
-    };
-    FocalPoint.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
-        ctx.strokeStyle = 'red';
-        ctx.strokeRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
-    };
-    return FocalPoint;
-})(Actor);
 //# sourceMappingURL=game.js.map

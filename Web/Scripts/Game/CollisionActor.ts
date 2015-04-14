@@ -1,22 +1,22 @@
 interface ICollidable {
 
     drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number): void;
-    collide(engine: Engine, actor: Actor): void;
+    collide(engine: ex.Engine, actor: ex.Actor): void;
 }
 
-class CollisionActor extends Actor implements ICollidable {
-    constructor(x?: number, y?: number, width?: number, height?: number, color?: Color) {
+class CollisionActor extends ex.Actor implements ICollidable {
+    constructor(x?: number, y?: number, width?: number, height?: number, color?: ex.Color) {
         super(x, y, width, height, color);
     }
 
     public drawCollisionMap(ctx: CanvasRenderingContext2D, delta: number): void {
         var oldColor = this.color;
-        this.color = new Color(0, 0, 0, 1);
+        this.color = new ex.Color(0, 0, 0, 1);
         this.draw(ctx, delta);
         this.color = oldColor;
     }
 
-    public isHit(engine: Engine, x: number, y: number): boolean {
+    public isHit(engine: ex.Engine, x: number, y: number): boolean {
         var collisionCanvas = document.createElement("canvas");
         collisionCanvas.width = Game.current.mapConfig.width;
         collisionCanvas.height = Game.current.mapConfig.height;
@@ -35,6 +35,6 @@ class CollisionActor extends Actor implements ICollidable {
         return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
     }
 
-    public collide(engine: Engine, actor: Actor) {
+    public collide(engine: ex.Engine, actor: ex.Actor) {
     }
 }

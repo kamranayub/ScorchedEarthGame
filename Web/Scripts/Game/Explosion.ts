@@ -1,4 +1,4 @@
-class Explosion extends Actor {
+class Explosion extends ex.Actor {
 
     /**
      * The higher this number, the faster the explosion radius expands
@@ -11,7 +11,7 @@ class Explosion extends Actor {
     private _colorDiffG: number;
     private _colorDiffB: number;
 
-    constructor(x: number, y: number, public radius: number, public damage: number) {
+    constructor(x: number, y: number, public radius: number, public damage: number, public dir: ex.Vector) {
         super(x, y, radius, radius, Colors.ExplosionBegin);
         
         this.expansionModifier = 0.15;
@@ -21,13 +21,13 @@ class Explosion extends Actor {
         this._colorDiffB = Colors.ExplosionEnd.b - Colors.ExplosionBegin.b;
     }
 
-    public update(engine: Engine, delta: number) {
+    public update(engine: ex.Engine, delta: number) {
         super.update(engine, delta);
 
         // adjust color based on current radius
         var percRadius = this._currentRadius / this.radius;
 
-        this.color = new Color(
+        this.color = new ex.Color(
             Math.floor(Colors.ExplosionBegin.r + (this._colorDiffR * percRadius)),
             Math.floor(Colors.ExplosionBegin.g + (this._colorDiffG * percRadius)),
             Math.floor(Colors.ExplosionBegin.b + (this._colorDiffB * percRadius)));
@@ -36,7 +36,7 @@ class Explosion extends Actor {
         if (this._currentRadius >= this.radius) {
 
             // loop through landmasses and destruct
-            engine.currentScene.children.forEach((actor: Actor) => {
+            engine.currentScene.children.forEach((actor: ex.Actor) => {
                 if (actor instanceof CollisionActor) {
                     var collActor = (<CollisionActor>actor);
 

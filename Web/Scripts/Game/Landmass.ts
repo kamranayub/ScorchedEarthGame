@@ -1,4 +1,3 @@
-/// <reference path="Excalibur.d.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="CollisionActor.ts" />
 
@@ -13,13 +12,13 @@ class Landmass extends CollisionActor {
     private planetCollisionCtx: CanvasRenderingContext2D;
 
     constructor(private mapConfig: IMapConfiguration) {
-        super(0, 0, null, null, Colors.Land);
-            
+        super(0, 0);
+
+        this.anchor.setTo(0, 0);
         this.generate();
-        this.invisible = true;
     }
 
-    public update(engine: Engine, delta: number) {
+    public update(engine: ex.Engine, delta: number) {
         super.update(engine, delta);
     }
 
@@ -41,19 +40,24 @@ class Landmass extends CollisionActor {
 
         return {
             angle: randomAngle,
-            point: new Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
+            point: new ex.Point(Math.floor(randomX + this.x + this.radius), Math.floor(randomY + this.y + this.radius))
         };
     }
 
-    public collide(engine: Engine, actor: Actor) {
+    public collide(engine: ex.Engine, actor: ex.Actor) {
         super.collide(engine, actor);
 
         if (actor instanceof Explosion) {
-            this.destruct(new Point(actor.x, actor.y), (<Explosion>actor).radius);
+            var explosion = (<Explosion>actor);
+            this.destruct(new ex.Point(actor.x, actor.y), explosion.radius);
+
+            //// nudge landmass
+            //var power = explosion.dir.normalize().scale(explosion.radius);
+            //this.moveTo(this.x + power.x, this.y + power.y, 2000 / explosion.radius);
         }
     }
 
-    public destruct(point: Point, radius: number) {
+    public destruct(point: ex.Point, radius: number) {
        
         this.planetCtx.beginPath();
         this.planetCtx.globalCompositeOperation = 'destination-out';        
@@ -78,7 +82,7 @@ class Landmass extends CollisionActor {
      * Pseudo orbital calculations
      * Acts on the actor by manipulating its velocities
      */
-    public actOn(actor: Actor, delta: number): void {
+    public actOn(actor: ex.Actor, delta: number): void {
 
         var G = Config.gravity;
         var x = this.x + this.radius;
@@ -127,7 +131,7 @@ class Landmass extends CollisionActor {
         this.planetCollisionCtx = collision.ctx;      
     }
 
-    private generateCanvas(color?: Color) {
+    private generateCanvas(color?: ex.Color) {
         var canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d');
         

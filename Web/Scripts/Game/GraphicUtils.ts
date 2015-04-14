@@ -4,7 +4,7 @@ class GraphicUtils {
      * Determines whether or not the given color is present
      * in the given pixel array.
      */
-    public static isPixelColorOf(pixels: number[], color: Color): boolean {
+    public static isPixelColorOf(pixels: number[], color: ex.Color): boolean {
 
         // pixel = 4 sets of RGBA
         for (var i = 0; i < pixels.length; i += 4) {

@@ -1,4 +1,4 @@
-﻿/// <reference path="Excalibur.d.ts" />
+﻿/// <reference path="../Excalibur.d.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="GameConfig.ts" />
 /// <reference path="GameSettings.ts" />
@@ -27,16 +27,16 @@ class Game {
     /**
      * Current game engine instance
      */
-    public engine: Engine;
+    public engine: ex.Engine;
 
     private ui: UI;
     private planets: Landmass[];    
     private focalPoint: FocalPoint;
-    private focalCamera: Camera.TopCamera;
+    private focalCamera: ex.TopCamera;
     private playerTank: PlayerTank;
     
     constructor() {
-        this.engine = new Engine(null, null, 'game');        
+        this.engine = new ex.Engine(0, 0, 'game', ex.DisplayMode.FullScreen);        
 
         Patches.patchInCollisionMaps(this.engine,
             () => this.mapConfig ? this.mapConfig.width : this.engine.canvas.width,
@@ -47,34 +47,21 @@ class Game {
 
         var loader = this.getLoader();
 
-        // load resources
-        this.engine.load(loader);
-
-        // HACK: workaround until engine/loader exposes event
-        // oncomplete
-        var oldOnComplete = loader.oncomplete;
-
-        loader.oncomplete = () => {
-            oldOnComplete.apply(loader, arguments);
-
-            this.init();
-        };
-
         // start game
-        this.engine.start();
+        this.engine.start(loader).then(() => this.init());
     }
 
-    private getLoader(): Loader {
-        var loader = new Loader();
-        loader.addResource('mus-ambient1', Resources.Global.musicAmbient1);
-        loader.addResource('snd-die', Resources.Tanks.dieSound);
-        loader.addResource('snd-fire', Resources.Tanks.fireSound);
-        loader.addResource('snd-explode-small', Resources.Explosions.smallExplosion);
-        loader.addResource('snd-moveBarrel', Resources.Tanks.moveBarrelSound);
-        loader.addResource('img-planet1', Resources.Planet.planet1Image);
-        loader.addResource('img-planet2', Resources.Planet.planet2Image);
-        loader.addResource('img-planet3', Resources.Planet.planet3Image);
-        loader.addResource('img-planet4', Resources.Planet.planet4Image);
+    private getLoader(): ex.Loader {
+        var loader = new ex.Loader();
+        loader.addResource(Resources.Global.musicAmbient1);
+        loader.addResource(Resources.Tanks.dieSound);
+        loader.addResource(Resources.Tanks.fireSound);
+        loader.addResource(Resources.Explosions.smallExplosion);
+        loader.addResource(Resources.Tanks.moveBarrelSound);
+        loader.addResource(Resources.Planet.planet1Image);
+        loader.addResource(Resources.Planet.planet2Image);
+        loader.addResource(Resources.Planet.planet3Image);
+        loader.addResource(Resources.Planet.planet4Image);
 
         return loader;
     }
@@ -114,8 +101,8 @@ class Game {
         }        
         
         // create camera
-        this.focalCamera = new Camera.TopCamera(this.engine);
-        this.engine.camera = this.focalCamera;        
+        this.focalCamera = new ex.TopCamera();
+        this.engine.currentScene.camera = this.focalCamera;        
 
         // Generate the map
         this.generateMap(settings);
@@ -140,7 +127,7 @@ class Game {
         this.ui.showHUD();
 
         // update power
-        this.playerTank.addEventListener('update', () => {
+        this.playerTank.on('update', () => {
             this.ui.updateFirepower(this.playerTank.firepower);
         });
 
@@ -247,7 +234,7 @@ class Game {
         }
     }
 
-    private focusOn(actor: Actor): void {
+    private focusOn(actor: ex.Actor): void {
         console.log("Focusing on actor", actor, actor.x, actor.y);
 
         this.focalPoint.x = actor.x;

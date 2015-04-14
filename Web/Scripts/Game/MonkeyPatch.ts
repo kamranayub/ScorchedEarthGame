@@ -1,4 +1,4 @@
-/// <reference path="Excalibur.d.ts" />
+/// <reference path="../Excalibur.d.ts" />
 
 module Patches {
 
@@ -10,7 +10,7 @@ module Patches {
      * to ensure the canvas size matches the map size. Alternatively, we could probably
      * transform it before we check for collisions, but this is easier!
      */
-    export function patchInCollisionMaps(engine: Engine, widthAccessor: () => number, heightAccessor: () => number) {
+    export function patchInCollisionMaps(engine: ex.Engine, widthAccessor: () => number, heightAccessor: () => number) {
         var collisionCanvas = document.createElement("canvas");
 
         collisionCanvas.id = "collisionCanvas";
@@ -21,8 +21,8 @@ module Patches {
         // DEBUG
         // document.body.appendChild(collisionCanvas);
 
-        var oldUpdate = Engine.prototype["update"];
-        Engine.prototype["update"] = function (delta) {
+        var oldUpdate = ex.Engine.prototype["update"];
+        ex.Engine.prototype["update"] = function (delta) {
 
             var width = widthAccessor();
             var height = heightAccessor();
@@ -38,8 +38,8 @@ module Patches {
             oldUpdate.apply(this, [delta]);
         };
 
-        var oldDraw = Engine.prototype["draw"];
-        Engine.prototype["draw"] = function (delta) {
+        var oldDraw = ex.Engine.prototype["draw"];
+        ex.Engine.prototype["draw"] = function (delta) {
 
             var width = widthAccessor();
             var height = heightAccessor();
@@ -50,14 +50,27 @@ module Patches {
             oldDraw.apply(this, [delta]);
         };
 
-        SceneNode.prototype.draw = function (ctx: CanvasRenderingContext2D, delta: number) {
-            this.children.forEach(function (actor: Actor) {
-                actor.draw(ctx, delta);
+        ex.Scene.prototype.draw = function (ctx: CanvasRenderingContext2D, delta: number) {
+            ctx.save();
 
-                if (actor instanceof CollisionActor) {
-                    (<CollisionActor>actor).drawCollisionMap(collisionCtx, delta);
+            if (this.camera) {
+                this.camera.update(ctx, delta);
+            }
+
+            var i: number, len: number;
+            for (i = 0, len = this.children.length; i < len; i++) {
+
+                // only draw actors that are visible
+                if (this.children[i].visible) {
+                    this.children[i].draw(ctx, delta);
                 }
-            });
+
+                if (this.children[i] instanceof CollisionActor) {
+                    (<CollisionActor>this.children[i]).drawCollisionMap(collisionCtx, delta);
+                }
+            }
+
+            ctx.restore();
         };
 
         (<any>engine).collisionCtx = collisionCtx;

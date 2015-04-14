@@ -9,14 +9,14 @@ module Projectiles {
             super(x, y, 2, 2, Colors.Projectile, angle, power, 10);
         }
 
-        public onCollision(engine: Engine): void {
+        public onCollision(engine: ex.Engine): void {
             super.onCollision(engine);
 
             // play sound
-            Resources.Explosions.smallExplosion.sound.play();
+            Resources.Explosions.smallExplosion.play();
 
             // play explosion animation
-            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5);
+            var splosion = new Explosion(this.x, this.y, this.explodeRadius, 5, new ex.Vector(this.dx, this.dy));
 
             // add explosion to engine
             engine.addChild(splosion);

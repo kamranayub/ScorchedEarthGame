@@ -1,4 +1,4 @@
-﻿/// <reference path="Excalibur.d.ts" />
+﻿/// <reference path="../Excalibur.d.ts" />
 
 var Config = {
 
@@ -43,14 +43,14 @@ var Config = {
 };
 
 var Colors = {
-    Black: Color.fromHex("#000000"),
-    White: Color.fromHex("#ffffff"),
+    Black: ex.Color.fromHex("#000000"),
+    White: ex.Color.fromHex("#ffffff"),
 
-    Background: Color.fromHex("#141414"),
-    Player: Color.fromHex("#a73c3c"),
-    Enemy: Color.fromHex("#c0b72a"),
-    Land: Color.fromHex("#8c8c8c"),
-    Projectile: Color.fromHex("#ffffff"),
-    ExplosionBegin: Color.fromHex("#ddd32f"),
-    ExplosionEnd: Color.fromHex("#c12713")
+    Background: ex.Color.fromHex("#141414"),
+    Player: ex.Color.fromHex("#a73c3c"),
+    Enemy: ex.Color.fromHex("#c0b72a"),
+    Land: ex.Color.fromHex("#8c8c8c"),
+    Projectile: ex.Color.fromHex("#ffffff"),
+    ExplosionBegin: ex.Color.fromHex("#ddd32f"),
+    ExplosionEnd: ex.Color.fromHex("#c12713")
 };

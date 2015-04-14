@@ -144,10 +144,11 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Content Include="Global.asax" />
     <Content Include="Music\g33x-space-ambient.mp3" />
+    <Content Include="Scripts\Excalibur.js" />
     <Content Include="Scripts\game.js" />
-    <Content Include="Scripts\Game\Excalibur.js" />
     <Content Include="Scripts\Game\GameConfig.ts" />
     <Content Include="Scripts\Game\Game.ts" />
+    <TypeScriptCompile Include="Scripts\Excalibur.d.ts" />
     <TypeScriptCompile Include="Scripts\Game\CollisionActor.ts" />
     <TypeScriptCompile Include="Scripts\Game\Explosion.ts" />
     <TypeScriptCompile Include="Scripts\Game\FocalPoint.ts" />
@@ -157,7 +158,6 @@
     <TypeScriptCompile Include="Scripts\Game\MapConfiguration.ts" />
     <TypeScriptCompile Include="Scripts\Game\MonkeyPatch.ts" />
     <TypeScriptCompile Include="Scripts\Game\Projectile.ts" />
-    <TypeScriptCompile Include="Scripts\Game\Excalibur.d.ts" />
     <TypeScriptCompile Include="Scripts\Game\Landmass.ts" />
     <Content Include="Scripts\Game\Tank.ts" />
     <Content Include="Sounds\Die.wav" />
@@ -285,6 +285,10 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
+  <PropertyGroup>
+    <PreBuildEvent>copy $(SolutionDir)Excalibur\dist\Excalibur.js $(ProjectDir)Scripts
+copy $(SolutionDir)Excalibur\dist\Excalibur.d.ts $(ProjectDir)Scripts</PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

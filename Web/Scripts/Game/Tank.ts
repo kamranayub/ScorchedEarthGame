@@ -1,5 +1,4 @@
-﻿/// <reference path="Excalibur.d.ts" />
-/// <reference path="GameConfig.ts" />
+﻿/// <reference path="GameConfig.ts" />
 /// <reference path="GraphicUtils.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="Projectile.ts" />
@@ -20,12 +19,11 @@ class Tank extends CollisionActor {
 
     private healthbar: Healthbar;
 
-    constructor(x?: number, y?: number, color?: Color) {
+    constructor(x?: number, y?: number, color?: ex.Color) {
         super(x, y, Config.tankWidth, Config.tankHeight, color);        
 
         this.barrelAngle = (Math.PI / 4) + Math.PI;
         this.firepower = Config.defaultFirepower;
-        this.invisible = true;
         this.healthbar = new Healthbar(100);
     }
 
@@ -79,12 +77,9 @@ class Tank extends CollisionActor {
 
         // draw on landmass/scale/rotate
         ctx.restore();
-
-        // super
-        super.draw(ctx, delta);
     }
 
-    public placeOn(landmass: Landmass, point: Point, angle: number): void {
+    public placeOn(landmass: Landmass, point: ex.Point, angle: number): void {
         this.landmass = landmass;
 
         // set x,y
@@ -130,23 +125,23 @@ class Tank extends CollisionActor {
         return new Projectiles.Missile(barrelX, barrelY, this.barrelAngle + this.angle + (Math.PI / 2), this.firepower);
     }
 
-    public damage(engine: Engine, value: number) {
+    public damage(value: number) {
         this.healthbar.reduce(value);
 
         if (this.healthbar.getCurrent() <= 0) {
-            this.die(engine);
+            this.die();
         }
     }
 
-    public collide(engine: Engine, actor: Actor): void {
+    public collide(engine: ex.Engine, actor: ex.Actor): void {
         super.collide(engine, actor);
 
         if (actor instanceof Explosion) {
-            this.damage(engine, (<Explosion>actor).damage);
+            this.damage((<Explosion>actor).damage);
         }
     }
 
-    private die(engine: Engine): void {
+    public die(): ex.Actor {
 
         // play explosions
         var minX = this.x - 15,
@@ -155,16 +150,18 @@ class Tank extends CollisionActor {
             maxY = this.y + 15;
 
         // kill
-        engine.removeChild(this);
+        Game.current.engine.remove(this);
 
         // badass explode sound
         Resources.Tanks.dieSound.sound.play();
 
         for (var i = 0; i < 5; i++) {
-            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4);
-            engine.addChild(splody);
+            var splody = new Explosion(Math.random() * (maxX - minX) + minX, Math.random() * (maxY - minY) + minY, Math.random() * 15, 4, new ex.Vector(0, 0));
+            Game.current.engine.add(splody);
             console.log("Added splody", splody.x, splody.y);
         }
+
+        return this;
     }
 }
 
@@ -175,14 +172,21 @@ class PlayerTank extends Tank {
     shouldFirepowerAccel: boolean;
 
     constructor(x?: number, y?: number) {
-        super(x, y, Colors.Player);
-
-        this.addEventListener('keydown', this.handleKeyDown);
-        this.addEventListener('keyup', this.handleKeyUp);        
+        super(x, y, Colors.Player);      
     }
 
-    public update(engine: Engine, delta: number): void {
+    public update(engine: ex.Engine, delta: number): void {
         super.update(engine, delta);
+
+        if (engine.input.keyboard.isKeyDown(ex.Input.Keys.Up) ||
+            engine.input.keyboard.isKeyDown(ex.Input.Keys.Down)) {
+            this.shouldFirepowerAccel = true;
+        }
+
+        if (engine.input.keyboard.isKeyUp(ex.Input.Keys.Up) ||
+            engine.input.keyboard.isKeyUp(ex.Input.Keys.Down)) {
+            this.shouldFirepowerAccel = false;
+        }
 
         if (this.shouldFirepowerAccel) {
             this.currentFirepowerAccelDelta += Config.firepowerAccel;
@@ -190,23 +194,23 @@ class PlayerTank extends Tank {
             this.currentFirepowerAccelDelta = 0;
         }
 
-        if (engine.isKeyPressed(Keys.LEFT)) {
+        if (engine.input.keyboard.isKeyPressed(ex.Input.Keys.Left)) {
 
             this.moveBarrelLeft(Config.barrelRotateVelocity, delta);
 
-        } else if (engine.isKeyPressed(Keys.RIGHT)) {
+        } else if (engine.input.keyboard.isKeyPressed(ex.Input.Keys.Right)) {
 
             this.moveBarrelRight(Config.barrelRotateVelocity, delta);
 
-        } else if (engine.isKeyPressed(Keys.UP)) {
+        } else if (engine.input.keyboard.isKeyPressed(ex.Input.Keys.Up)) {
 
             this.incrementFirepower(delta);
 
-        } else if (engine.isKeyPressed(Keys.DOWN)) {
+        } else if (engine.input.keyboard.isKeyPressed(ex.Input.Keys.Down)) {
 
             this.decrementFirepower(delta);
 
-        } else if (engine.isKeyUp(Keys.SPACE)) {
+        } else if (engine.input.keyboard.isKeyUp(ex.Input.Keys.Space)) {
 
             var bullet = this.getProjectile();
 
@@ -240,19 +244,4 @@ class PlayerTank extends Tank {
 
     }
 
-    private handleKeyDown(event?: KeyEvent): void {
-        if (event === null) return;
-
-        if (event.key === Keys.UP || event.key === Keys.DOWN) {
-            this.shouldFirepowerAccel = true;            
-        }
-    }
-
-    private handleKeyUp(event?: KeyEvent): void {
-        if (event === null) return;
-
-        if (event.key === Keys.UP || event.key === Keys.DOWN) {
-            this.shouldFirepowerAccel = false;            
-        }
-    }
 }
