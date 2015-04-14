@@ -19,11 +19,14 @@ button {
   left: 0;
   right: 0;
 }
-#collisionCanvas {
+#debug {
   position: absolute;
   top: 0;
   left: 0;
   border: 3px solid red;
+}
+#debug .collisionCanvas {
+  margin: 10px;
 }
 /**
  * Header

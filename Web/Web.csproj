@@ -260,17 +260,12 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TypeScriptOutFile>scripts/game.js</TypeScriptOutFile>
+  </PropertyGroup>
+  <Import Project="$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets')" />
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
-  </Target>
-  <Target Name="CompileTypeScript">
-    <Message Text="Compiling TypeScript files" />
-    <Message Text="Creating response file typescriptcompiler.input" />
-    <WriteLinesToFile File="typescriptcompiler.input" Lines="&quot;$(ProjectDir)Scripts\Game\Game.ts&quot;" Overwrite="true" Encoding="Unicode" />
-    <Message Text="Executing tsc $(TypeScriptBuildConfigurations) @typescriptcompiler.input" />
-    <Exec Command="tsc $(TypeScriptBuildConfigurations) @typescriptcompiler.input" />
-    <Delete Files="typescriptcompiler.input" />
   </Target>
   <ProjectExtensions>
     <VisualStudio>

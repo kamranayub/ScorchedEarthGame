@@ -22,7 +22,7 @@ class DOM {
      * @param ctx A context to search from (default: null)
      */
     public static query(selector: string, ctx: HTMLElement = null): HTMLElement {
-        ctx = ctx || document;
+        ctx = ctx || document.body;
 
         return <HTMLElement>ctx.querySelector(selector);
     }
