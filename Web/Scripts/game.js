@@ -8,151 +8,30 @@ var CollisionActor = (function (_super) {
     __extends(CollisionActor, _super);
     function CollisionActor(x, y, width, height, color) {
         _super.call(this, x, y, width, height, color);
-        this.collisionCanvas = document.createElement("canvas");
-        this.collisionCtx = this.collisionCanvas.getContext('2d');
-        this.collisionCanvas.width = Game.current.mapConfig.width;
-        this.collisionCanvas.height = Game.current.mapConfig.height;
     }
     CollisionActor.prototype.drawCollisionMap = function (ctx, delta) {
         var oldColor = this.color;
         this.color = new Color(0, 0, 0, 1);
         this.draw(ctx, delta);
         this.color = oldColor;
-        this.draw(this.collisionCtx, delta);
-        this.collisionData = this.collisionCtx.getImageData(0, 0, this.collisionCanvas.width, this.collisionCanvas.height).data;
     };
     CollisionActor.prototype.isHit = function (engine, x, y) {
-        if (!this.collisionData)
-            return false;
-        //collisionCtx.fillStyle = 'white';
-        //collisionCtx.fillRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
-        //this.drawCollisionMap(this.collisionCtx, 0);
-        var collisionPixelIndex = this.translateTo1DArrayCoords(Math.floor(x), Math.floor(y), this.collisionCanvas.width);
-        return !GraphicUtils.isPixelColorOf([
-            this.collisionData[collisionPixelIndex],
-            this.collisionData[collisionPixelIndex + 1],
-            this.collisionData[collisionPixelIndex + 2],
-            this.collisionData[collisionPixelIndex + 3]
-        ], Colors.White);
-        //return false;
-    };
-    CollisionActor.prototype.translateTo1DArrayCoords = function (x, y, width) {
-        return (y * width + x) * 4;
+        var collisionCanvas = document.createElement("canvas");
+        collisionCanvas.width = Game.current.mapConfig.width;
+        collisionCanvas.height = Game.current.mapConfig.height;
+        var collisionCtx = collisionCanvas.getContext('2d');
+        collisionCtx.fillStyle = 'white';
+        collisionCtx.fillRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
+        this.drawCollisionMap(collisionCtx, 0);
+        var collisionPixelData = collisionCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        collisionCanvas = null;
+        collisionCtx = null;
+        return !GraphicUtils.isPixelColorOf(collisionPixelData, Colors.White);
     };
     CollisionActor.prototype.collide = function (engine, actor) {
     };
     return CollisionActor;
 })(Actor);
-var DOM = (function () {
-    function DOM() {
-    }
-    /**
-     * Gets a DOM element by ID
-     * @param id The ID to search by
-     */
-    DOM.id = function (id) {
-        return document.getElementById(id);
-    };
-    /**
-     * Gets a DOM element by ID
-     * @param id The ID to search by
-     */
-    DOM.idOf = function (id) {
-        return document.getElementById(id);
-    };
-    /**
-     * Gets a single DOM element by a selector
-     * @param selector The selector
-     * @param ctx A context to search from (default: null)
-     */
-    DOM.query = function (selector, ctx) {
-        if (ctx === void 0) { ctx = null; }
-        ctx = ctx || document.body;
-        return ctx.querySelector(selector);
-    };
-    /**
-     * Hides a DOM element
-     */
-    DOM.hide = function (element) {
-        element.style.display = 'none';
-    };
-    /**
-     * Shows a DOM element
-     */
-    DOM.show = function (element) {
-        element.style.display = 'block';
-    };
-    /**
-     * Toggles a CSS class on an element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to toggle
-     * @returns True if the class existed and false if not
-     */
-    DOM.toggleClass = function (element, cls) {
-        if (this.hasClass(element, cls)) {
-            this.removeClass(element, cls);
-            return true;
-        }
-        else {
-            this.addClass(element, cls);
-            return false;
-        }
-    };
-    /**
-     * Replaces a CSS class on an element
-     * @param element The DOM element to manipulate
-     * @param search The CSS class to find
-     * @param replace The CSS class to replace with
-     */
-    DOM.replaceClass = function (element, search, replace) {
-        if (this.hasClass(element, search)) {
-            this.removeClass(element, search);
-            this.addClass(element, replace);
-        }
-    };
-    /**
-     * Whether or not an element has a CSS class present
-     * @param element The DOM element to check
-     * @param cls The CSS class to check for
-     * @returns True if the class exists and false if not
-     */
-    DOM.hasClass = function (element, cls) {
-        return element.classList.contains(cls);
-    };
-    /**
-     * Adds a CSS class to a DOM element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to add
-     */
-    DOM.addClass = function (element, cls) {
-        element.classList.add(cls);
-    };
-    /**
-     * Removes a CSS class to a DOM element
-     * @param element The DOM element to manipulate
-     * @param cls The CSS class to remove
-     */
-    DOM.removeClass = function (element, cls) {
-        element.classList.remove(cls);
-    };
-    DOM.onAnimationEnd = function (element, done) {
-        var animationEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitAnimationEnd' : 'animationend';
-        var handler = function () {
-            element.removeEventListener(animationEndEvent, handler);
-            done();
-        };
-        element.addEventListener(animationEndEvent, handler);
-    };
-    DOM.onTransitionEnd = function (element, done) {
-        var transitionEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitTransitionEnd' : 'transitionend';
-        var handler = function () {
-            element.removeEventListener(transitionEndEvent, handler);
-            done();
-        };
-        element.addEventListener(transitionEndEvent, handler);
-    };
-    return DOM;
-})();
 var Explosion = (function (_super) {
     __extends(Explosion, _super);
     function Explosion(x, y, radius, damage) {
@@ -895,6 +774,116 @@ var Patches;
     }
     Patches.patchInCollisionMaps = patchInCollisionMaps;
 })(Patches || (Patches = {}));
+var DOM = (function () {
+    function DOM() {
+    }
+    /**
+     * Gets a DOM element by ID
+     * @param id The ID to search by
+     */
+    DOM.id = function (id) {
+        return document.getElementById(id);
+    };
+    /**
+     * Gets a DOM element by ID
+     * @param id The ID to search by
+     */
+    DOM.idOf = function (id) {
+        return document.getElementById(id);
+    };
+    /**
+     * Gets a single DOM element by a selector
+     * @param selector The selector
+     * @param ctx A context to search from (default: null)
+     */
+    DOM.query = function (selector, ctx) {
+        if (ctx === void 0) { ctx = null; }
+        ctx = ctx || document.body;
+        return ctx.querySelector(selector);
+    };
+    /**
+     * Hides a DOM element
+     */
+    DOM.hide = function (element) {
+        element.style.display = 'none';
+    };
+    /**
+     * Shows a DOM element
+     */
+    DOM.show = function (element) {
+        element.style.display = 'block';
+    };
+    /**
+     * Toggles a CSS class on an element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to toggle
+     * @returns True if the class existed and false if not
+     */
+    DOM.toggleClass = function (element, cls) {
+        if (this.hasClass(element, cls)) {
+            this.removeClass(element, cls);
+            return true;
+        }
+        else {
+            this.addClass(element, cls);
+            return false;
+        }
+    };
+    /**
+     * Replaces a CSS class on an element
+     * @param element The DOM element to manipulate
+     * @param search The CSS class to find
+     * @param replace The CSS class to replace with
+     */
+    DOM.replaceClass = function (element, search, replace) {
+        if (this.hasClass(element, search)) {
+            this.removeClass(element, search);
+            this.addClass(element, replace);
+        }
+    };
+    /**
+     * Whether or not an element has a CSS class present
+     * @param element The DOM element to check
+     * @param cls The CSS class to check for
+     * @returns True if the class exists and false if not
+     */
+    DOM.hasClass = function (element, cls) {
+        return element.classList.contains(cls);
+    };
+    /**
+     * Adds a CSS class to a DOM element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to add
+     */
+    DOM.addClass = function (element, cls) {
+        element.classList.add(cls);
+    };
+    /**
+     * Removes a CSS class to a DOM element
+     * @param element The DOM element to manipulate
+     * @param cls The CSS class to remove
+     */
+    DOM.removeClass = function (element, cls) {
+        element.classList.remove(cls);
+    };
+    DOM.onAnimationEnd = function (element, done) {
+        var animationEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitAnimationEnd' : 'animationend';
+        var handler = function () {
+            element.removeEventListener(animationEndEvent, handler);
+            done();
+        };
+        element.addEventListener(animationEndEvent, handler);
+    };
+    DOM.onTransitionEnd = function (element, done) {
+        var transitionEndEvent = typeof AnimationEvent === 'undefined' ? 'webkitTransitionEnd' : 'transitionend';
+        var handler = function () {
+            element.removeEventListener(transitionEndEvent, handler);
+            done();
+        };
+        element.addEventListener(transitionEndEvent, handler);
+    };
+    return DOM;
+})();
 /// <reference path="DOM.ts" />
 var UI = (function () {
     function UI(game) {
@@ -976,55 +965,6 @@ var UI = (function () {
     };
     return UI;
 })();
-/// <reference path="Game.ts" />
-/**
- * Invisible actor that lets user move camera around
- * and allows us to "animate" the camera
- */
-var FocalPoint = (function (_super) {
-    __extends(FocalPoint, _super);
-    function FocalPoint() {
-        _super.call(this);
-        this.invisible = true;
-    }
-    FocalPoint.prototype.update = function (engine, delta) {
-        _super.prototype.update.call(this, engine, delta);
-        var mapWidth = Game.current.mapConfig.width, mapHeight = Game.current.mapConfig.height, moveSpeed = 5;
-        // Make sure new x, y isn't out of bounds
-        // Camera is centered on (x, y)
-        var viewCenter = new Point(engine.canvas.width / 2, engine.canvas.height / 2), isOnRightEdge = (this.x + viewCenter.x + moveSpeed >= mapWidth), isOnLeftEdge = (this.x - viewCenter.x - moveSpeed <= 0), isOnTopEdge = (this.y - viewCenter.y - moveSpeed <= 0), isOnBottomEdge = (this.y + viewCenter.y + moveSpeed >= mapHeight);
-        if (isOnRightEdge) {
-            this.x = mapWidth - viewCenter.x - 1;
-        }
-        if (isOnLeftEdge) {
-            this.x = viewCenter.x + 1;
-        }
-        if (isOnBottomEdge) {
-            this.y = mapHeight - viewCenter.y - 1;
-        }
-        if (isOnTopEdge) {
-            this.y = viewCenter.y + 1;
-        }
-        if (engine.isKeyPressed(87 /* W */) && !isOnTopEdge) {
-            this.y -= moveSpeed;
-        }
-        if (engine.isKeyPressed(83 /* S */) && !isOnBottomEdge) {
-            this.y += moveSpeed;
-        }
-        if (engine.isKeyPressed(65 /* A */) && !isOnLeftEdge) {
-            this.x -= moveSpeed;
-        }
-        if (engine.isKeyPressed(68 /* D */) && !isOnRightEdge) {
-            this.x += moveSpeed;
-        }
-    };
-    FocalPoint.prototype.draw = function (ctx, delta) {
-        _super.prototype.draw.call(this, ctx, delta);
-        ctx.strokeStyle = 'red';
-        ctx.strokeRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
-    };
-    return FocalPoint;
-})(Actor);
 /// <reference path="Excalibur.d.ts" />
 /// <reference path="Resources.ts" />
 /// <reference path="GameConfig.ts" />
@@ -1196,4 +1136,53 @@ var Game = (function () {
     Game.current = new Game();
     return Game;
 })();
+/// <reference path="Game.ts" />
+/**
+ * Invisible actor that lets user move camera around
+ * and allows us to "animate" the camera
+ */
+var FocalPoint = (function (_super) {
+    __extends(FocalPoint, _super);
+    function FocalPoint() {
+        _super.call(this);
+        this.invisible = true;
+    }
+    FocalPoint.prototype.update = function (engine, delta) {
+        _super.prototype.update.call(this, engine, delta);
+        var mapWidth = Game.current.mapConfig.width, mapHeight = Game.current.mapConfig.height, moveSpeed = 5;
+        // Make sure new x, y isn't out of bounds
+        // Camera is centered on (x, y)
+        var viewCenter = new Point(engine.canvas.width / 2, engine.canvas.height / 2), isOnRightEdge = (this.x + viewCenter.x + moveSpeed >= mapWidth), isOnLeftEdge = (this.x - viewCenter.x - moveSpeed <= 0), isOnTopEdge = (this.y - viewCenter.y - moveSpeed <= 0), isOnBottomEdge = (this.y + viewCenter.y + moveSpeed >= mapHeight);
+        if (isOnRightEdge) {
+            this.x = mapWidth - viewCenter.x - 1;
+        }
+        if (isOnLeftEdge) {
+            this.x = viewCenter.x + 1;
+        }
+        if (isOnBottomEdge) {
+            this.y = mapHeight - viewCenter.y - 1;
+        }
+        if (isOnTopEdge) {
+            this.y = viewCenter.y + 1;
+        }
+        if (engine.isKeyPressed(87 /* W */) && !isOnTopEdge) {
+            this.y -= moveSpeed;
+        }
+        if (engine.isKeyPressed(83 /* S */) && !isOnBottomEdge) {
+            this.y += moveSpeed;
+        }
+        if (engine.isKeyPressed(65 /* A */) && !isOnLeftEdge) {
+            this.x -= moveSpeed;
+        }
+        if (engine.isKeyPressed(68 /* D */) && !isOnRightEdge) {
+            this.x += moveSpeed;
+        }
+    };
+    FocalPoint.prototype.draw = function (ctx, delta) {
+        _super.prototype.draw.call(this, ctx, delta);
+        ctx.strokeStyle = 'red';
+        ctx.strokeRect(0, 0, Game.current.mapConfig.width, Game.current.mapConfig.height);
+    };
+    return FocalPoint;
+})(Actor);
 //# sourceMappingURL=game.js.map
